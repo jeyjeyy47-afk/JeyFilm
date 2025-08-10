@@ -73,6 +73,7 @@ body {
     width: 250px;
     font-size: 16px;
     transition: width 0.3s;
+    margin-right: 20px; /* Memberi jarak ke tombol Masuk */
 }
 
 .search-box:focus {
@@ -80,16 +81,7 @@ body {
     outline: none;
 }
 
-.sub-btn {
-    background-color: #1f80e0;
-    color: #f9f9f9;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 5px;
-    margin: 0 20px;
-    cursor: pointer;
-    font-weight: 600;
-}
+/* ATURAN UNTUK .sub-btn DIHAPUS DARI SINI */
 
 .login-link {
     color: #f9f9f9;
@@ -286,13 +278,6 @@ body {
     .nav-links {
         display: none;
     }
-    
-    /* PERBAIKAN: Tombol berlangganan tidak lagi disembunyikan. */
-    /* Sebagai gantinya, kita bisa memperkecil paddingnya jika perlu */
-    .sub-btn {
-        padding: 8px 12px;
-        margin: 0 10px;
-    }
 
     .search-box {
         width: 150px;
@@ -374,14 +359,9 @@ body {
     }
 
     .search-box {
-        width: 100px;
+        width: 120px;
         font-size: 14px;
-    }
-    
-    .sub-btn {
-        padding: 6px 8px;
-        font-size: 12px;
-        margin: 0 8px;
+        margin-right: 10px;
     }
     
     .login-link {
