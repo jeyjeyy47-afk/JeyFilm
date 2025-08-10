@@ -6,7 +6,7 @@ const apiEndpoints = {
     horrorMovies: `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&language=id-ID&with_genres=27&sort_by=popularity.desc`,
     trendingTv: `https://api.themoviedb.org/3/trending/tv/week?api_key=${apiKey}&language=id-ID`,
     upcomingMovies: `https://api.themoviedb.org/3/movie/upcoming?api_key=${apiKey}&language=id-ID&page=1`,
-    // Endpoint untuk film olahraga. ID kata kunci: 9715 (sport), 18 (sports drama)
+    // REVISI: Menggunakan kombinasi Genre Drama (18) dan Keyword Sport (9715) untuk hasil lebih relevan
     sportsMovies: `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&language=id-ID&sort_by=popularity.desc&with_genres=18&with_keywords=9715`,
     search: `https://api.themoviedb.org/3/search/multi?api_key=${apiKey}&language=id-ID&query=`
 };
@@ -20,12 +20,16 @@ const createMediaCard = (item) => {
     const cardLink = document.createElement('a');
     cardLink.className = 'card';
     
+    // Gunakan media_type jika tersedia (dari pencarian), jika tidak, tentukan berdasarkan properti
     const mediaType = item.media_type || (item.title ? 'movie' : 'tv');
     
+    // Jangan buat kartu untuk tipe 'person' dari hasil pencarian
     if (mediaType === 'person') return null;
     
+    // Membuat URL yang akan dibuka saat kartu diklik
     cardLink.href = `player.html?id=${item.id}&type=${mediaType}&title=${encodeURIComponent(item.title || item.name)}`;
 
+    // --- Membangun elemen visual di dalam kartu ---
     const cardImg = document.createElement('img');
     cardImg.className = 'card-img';
     cardImg.src = `${imageBaseUrl}w500${item.poster_path}`;
@@ -93,12 +97,6 @@ const fetchAndBuildSection = async (endpoint, container) => {
     try {
         const response = await fetch(endpoint);
         const data = await response.json();
-        
-        // Hapus penampung kartu jika sudah ada isinya
-        while(container.firstChild) {
-            container.removeChild(container.firstChild);
-        }
-
         data.results.forEach(item => {
             const card = createMediaCard(item);
             if (card) {
@@ -110,7 +108,7 @@ const fetchAndBuildSection = async (endpoint, container) => {
     }
 };
 
-// --- LOGIKA UTAMA ---
+// --- LOGIKA UTAMA: DETEKSI HALAMAN, PENCARIAN, DAN JALANKAN FUNGSI ---
 document.addEventListener('DOMContentLoaded', () => {
     // --- Logika Deteksi Halaman ---
     const carouselContainer = document.querySelector('.carousel');
@@ -119,6 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const sportsGridContainer = document.getElementById('sports-movies-grid'); // Deteksi halaman olahraga
 
     if (carouselContainer) { // Halaman Utama
+        console.log("Halaman utama terdeteksi.");
         const horrorListContainer = document.getElementById('horror-list');
         const trendingTvListContainer = document.getElementById('trending-tv-list');
         fetchAndBuildCarousel(carouselContainer);
@@ -126,12 +125,15 @@ document.addEventListener('DOMContentLoaded', () => {
         fetchAndBuildSection(apiEndpoints.trendingTv, trendingTvListContainer);
     } 
     else if (upcomingGridContainer) { // Halaman Film
+        console.log("Halaman Film terdeteksi.");
         fetchAndBuildSection(apiEndpoints.upcomingMovies, upcomingGridContainer);
     }
-    else if (sportsGridContainer) { // Halaman Olahraga
+    else if (sportsGridContainer) { // Halaman Olahraga (BARU)
+        console.log("Halaman Olahraga terdeteksi.");
         fetchAndBuildSection(apiEndpoints.sportsMovies, sportsGridContainer);
     }
     else if (playerContainer) { // Halaman Player
+        console.log("Halaman Player terdeteksi.");
         const params = new URLSearchParams(window.location.search);
         const mediaId = params.get('id');
         const mediaType = params.get('type');
@@ -158,15 +160,16 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelector('.carousel-container'),
         ...document.querySelectorAll('.video-card-container'),
         document.querySelector('.main-content')
-    ].filter(el => el != null);
+    ].filter(el => el != null); 
 
-    let searchResultsWrapper;
+    let searchResultsWrapper; 
+
     let debounceTimeout;
 
     const handleSearch = async (query) => {
         if (!searchResultsWrapper) {
             searchResultsWrapper = document.createElement('div');
-            searchResultsWrapper.className = 'main-content';
+            searchResultsWrapper.className = 'main-content'; 
             searchResultsWrapper.id = 'search-results-wrapper';
             document.body.insertBefore(searchResultsWrapper, document.querySelector('nav').nextSibling);
         }
@@ -185,7 +188,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch(`${apiEndpoints.search}${encodeURIComponent(query)}`);
             const data = await response.json();
             
-            searchResultsWrapper.innerHTML = '';
+            searchResultsWrapper.innerHTML = ''; 
 
             const title = document.createElement('h1');
             title.textContent = `Hasil Pencarian untuk "${query}"`;
@@ -218,6 +221,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const query = e.target.value.trim();
         debounceTimeout = setTimeout(() => {
             handleSearch(query);
-        }, 500);
+        }, 500); 
     });
 });
