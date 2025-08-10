@@ -10,23 +10,20 @@ const apiEndpoints = {
 
 const imageBaseUrl = 'https://image.tmdb.org/t/p/';
 
-// --- Fungsi Generik untuk Membuat Kartu Media (Film atau TV) ---
+// --- Fungsi Generik untuk Membuat Kartu Media ---
 const createMediaCard = (item) => {
-    // Jangan buat kartu jika tidak ada poster
     if (!item.poster_path) return null;
 
-    // PERBAIKAN UTAMA: Membuat elemen <a> sebagai pembungkus utama kartu
     const cardLink = document.createElement('a');
     cardLink.className = 'card';
     
-    // Tentukan jenis media (film atau tv) untuk URL embed yang benar
+    // Tentukan tipe media berdasarkan keberadaan properti 'title' (untuk film) atau 'name' (untuk TV)
     const mediaType = item.title ? 'movie' : 'tv';
     
-    // Mengarahkan tautan ke player.html dengan ID dan judul sebagai parameter
-    // ID TMDB adalah kunci untuk memuat video yang benar
+    // Membuat URL yang akan dibuka saat kartu diklik
     cardLink.href = `player.html?id=${item.id}&type=${mediaType}&title=${encodeURIComponent(item.title || item.name)}`;
 
-    // === Membangun isi visual dari kartu di dalam tautan ===
+    // --- Membangun elemen visual di dalam kartu ---
     const cardImg = document.createElement('img');
     cardImg.className = 'card-img';
     cardImg.src = `${imageBaseUrl}w500${item.poster_path}`;
@@ -46,10 +43,9 @@ const createMediaCard = (item) => {
     watchlistBtn.className = 'watchlist-btn';
     watchlistBtn.textContent = 'Info Lebih Lanjut';
     
-    // Mencegah klik pada tombol ini agar tidak ikut menavigasi halaman
     watchlistBtn.addEventListener('click', (e) => {
         e.preventDefault();
-        alert(`Anda mengklik info untuk: ${item.title || item.name}`);
+        alert(`Info untuk: ${item.title || item.name}`);
     });
 
     cardBody.appendChild(title);
@@ -59,18 +55,15 @@ const createMediaCard = (item) => {
     cardLink.appendChild(cardImg);
     cardLink.appendChild(cardBody);
     
-    // Mengembalikan elemen <a> yang sudah lengkap
     return cardLink;
 };
 
-// --- Fungsi untuk Mengambil Data dan Menampilkannya ---
-
+// --- Fungsi untuk Mengambil Data ---
 const fetchAndBuildCarousel = async (container) => {
     try {
         const response = await fetch(apiEndpoints.trendingMovies);
         const data = await response.json();
         data.results.slice(0, 5).forEach(movie => {
-            // ... (logika korsel tidak berubah)
             const slide = document.createElement('div');
             slide.className = 'slider';
             const imgElement = document.createElement('img');
@@ -90,7 +83,7 @@ const fetchAndBuildCarousel = async (container) => {
             container.appendChild(slide);
         });
     } catch (error) {
-        console.error('Error fetching trending movies for carousel:', error);
+        console.error('Gagal memuat korsel:', error);
     }
 };
 
@@ -105,53 +98,66 @@ const fetchAndBuildSection = async (endpoint, container) => {
             }
         });
     } catch (error) {
-        console.error(`Error fetching data from ${endpoint}:`, error);
+        console.error(`Gagal memuat data dari ${endpoint}:`, error);
     }
 };
 
 // --- LOGIKA UTAMA: DETEKSI HALAMAN DAN JALANKAN FUNGSI ---
 document.addEventListener('DOMContentLoaded', () => {
+    // Cari elemen unik untuk setiap halaman
     const carouselContainer = document.querySelector('.carousel');
-    const horrorListContainer = document.getElementById('horror-list');
-    const trendingTvListContainer = document.getElementById('trending-tv-list');
     const upcomingGridContainer = document.getElementById('upcoming-movies-grid');
     const playerContainer = document.getElementById('player-container');
 
-    // LOGIKA UNTUK HALAMAN UTAMA (index.html)
-    if (carouselContainer && horrorListContainer && trendingTvListContainer) {
+    // Cek halaman mana yang sedang aktif
+    if (carouselContainer) { // Halaman Utama
+        console.log("Halaman utama terdeteksi.");
+        const horrorListContainer = document.getElementById('horror-list');
+        const trendingTvListContainer = document.getElementById('trending-tv-list');
         fetchAndBuildCarousel(carouselContainer);
         fetchAndBuildSection(apiEndpoints.horrorMovies, horrorListContainer);
         fetchAndBuildSection(apiEndpoints.trendingTv, trendingTvListContainer);
     } 
-    // LOGIKA UNTUK HALAMAN FILM (film.html)
-    else if (upcomingGridContainer) {
+    else if (upcomingGridContainer) { // Halaman Film
+        console.log("Halaman Film terdeteksi.");
         fetchAndBuildSection(apiEndpoints.upcomingMovies, upcomingGridContainer);
     }
-    // LOGIKA UNTUK HALAMAN PEMUTAR VIDEO (player.html)
-    else if (playerContainer) {
+    else if (playerContainer) { // Halaman Player
+        console.log("Halaman Player terdeteksi.");
         const params = new URLSearchParams(window.location.search);
         const mediaId = params.get('id');
-        const mediaType = params.get('type'); // 'movie' atau 'tv'
+        const mediaType = params.get('type');
         const mediaTitle = params.get('title');
+        
+        // Menampilkan data yang kita dapat dari URL ke konsol
+        console.log("ID Media:", mediaId);
+        console.log("Tipe Media:", mediaType);
+        console.log("Judul Media:", mediaTitle);
+
+        const titleElement = document.getElementById('movie-player-title');
 
         if (mediaId && mediaType) {
-            const titleElement = document.getElementById('movie-player-title');
-            if (mediaTitle) {
-                titleElement.textContent = mediaTitle;
-                document.title = `Nonton ${mediaTitle} - kingmovie-nobar gratis`;
-            }
+            // Perbarui judul halaman dan tab browser
+            titleElement.textContent = mediaTitle || "Memuat film...";
+            document.title = `Nonton ${mediaTitle || 'Film'} - kingmovie-nobar gratis`;
 
+            // MEMBUAT URL EMBED - INI BAGIAN PALING PENTING UNTUK DIPERIKSA
+            const embedUrl = `https://vidfast.net/embed/${mediaId}`; // Coba format paling simpel dulu
+            // const embedUrl = `https://vidfast.net/embed/${mediaType}/${mediaId}`; // Coba format ini jika yang simpel gagal
+
+            console.log("Mencoba memuat iframe dengan URL:", embedUrl);
+
+            // Membuat dan menambahkan iframe ke halaman
             const iframe = document.createElement('iframe');
-            // Membuat URL embed berdasarkan tipe media
-            iframe.src = `https://vidfast.net/embed/${mediaType}/${mediaId}`;
+            iframe.src = embedUrl;
             iframe.setAttribute('allowfullscreen', 'true');
             iframe.setAttribute('frameborder', '0');
             
             playerContainer.appendChild(iframe);
         } else {
-            const titleElement = document.getElementById('movie-player-title');
-            titleElement.textContent = "Error: Film atau Serial TV tidak ditemukan.";
-            playerContainer.innerHTML = '<p>Silakan kembali dan pilih media lain.</p>';
+            console.error("Kesalahan: ID atau Tipe media tidak ditemukan di URL.");
+            titleElement.textContent = "Error: Film tidak dapat dimuat";
+            playerContainer.innerHTML = '<p>Parameter tidak lengkap. Silakan kembali dan pilih film atau serial TV lain.</p>';
         }
     }
 });
