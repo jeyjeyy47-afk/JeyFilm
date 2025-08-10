@@ -141,9 +141,10 @@ document.addEventListener('DOMContentLoaded', () => {
             titleElement.textContent = mediaTitle || "Memuat film...";
             document.title = `Nonton ${mediaTitle || 'Film'} - kingmovie-nobar gratis`;
 
-            // MEMBUAT URL EMBED - INI BAGIAN PALING PENTING UNTUK DIPERIKSA
-            const embedUrl = `https://vidfast.net/embed/${mediaId}`; // Coba format paling simpel dulu
-            // const embedUrl = `https://vidfast.net/embed/${mediaType}/${mediaId}`; // Coba format ini jika yang simpel gagal
+            // MEMBUAT URL EMBED - MENGGUNAKAN FORMAT BARU YANG DIMINTA
+            // PERHATIAN: URL ini diasumsikan hanya untuk FILM.
+            // Jika serial TV juga perlu format berbeda, logika tambahan diperlukan.
+            const embedUrl = `https://vidfast.pro/movie/${mediaId}`;
 
             console.log("Mencoba memuat iframe dengan URL:", embedUrl);
 
