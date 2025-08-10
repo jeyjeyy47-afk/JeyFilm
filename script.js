@@ -2,7 +2,6 @@
 const apiKey = 'bd7f7c2373a157c90b6d8585680b194c';
 
 const apiEndpoints = {
-    // REVISI: Mengganti trendingMovies dengan endpoint nowPlayingMovies untuk carousel
     nowPlayingMovies: `https://api.themoviedb.org/3/movie/now_playing?api_key=${apiKey}&language=id-ID&page=1`,
     horrorMovies: `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&language=id-ID&with_genres=27&sort_by=popularity.desc`,
     trendingTv: `https://api.themoviedb.org/3/trending/tv/week?api_key=${apiKey}&language=id-ID`,
@@ -66,20 +65,24 @@ const fetchAndDisplayMedia = async (endpoint, container) => {
     }
 };
 
-// REVISI: Fungsi carousel sekarang juga akan memulai slider otomatis
+// REVISI: Fungsi carousel sekarang membuat elemen <a> agar bisa diklik
 const fetchAndBuildCarousel = async (endpoint, container) => {
     if (!container) return;
     try {
         const response = await fetch(endpoint);
         const data = await response.json();
-        container.innerHTML = ''; // Bersihkan kontainer
+        container.innerHTML = ''; 
         
-        const movies = data.results.slice(0, 5); // Ambil 5 film pertama
+        const movies = data.results.slice(0, 5);
         if (movies.length === 0) return;
 
         movies.forEach(movie => {
-            const slide = document.createElement('div');
+            // REVISI: Membuat elemen <a> bukan <div>
+            const slide = document.createElement('a'); 
             slide.className = 'slider';
+            // REVISI: Menambahkan href ke halaman player
+            slide.href = `player.html?id=${movie.id}&type=movie&title=${encodeURIComponent(movie.title)}`;
+
             slide.innerHTML = `
                 <div class="slide-content">
                     <h1 class="movie-title">${movie.title}</h1>
@@ -90,16 +93,15 @@ const fetchAndBuildCarousel = async (endpoint, container) => {
             container.appendChild(slide);
         });
 
-        // Memulai logika slider otomatis
+        // Logika slider otomatis tetap sama
         let slideIndex = 0;
         setInterval(() => {
             slideIndex++;
             if (slideIndex >= movies.length) {
-                slideIndex = 0; // Kembali ke slide pertama
+                slideIndex = 0;
             }
-            // Menggeser kontainer carousel
             container.style.transform = `translateX(-${slideIndex * 100}%)`;
-        }, 5000); // Durasi 5 detik
+        }, 5000);
 
     } catch (error) {
         console.error('Gagal memuat korsel:', error);
@@ -117,7 +119,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const genreSelect = document.getElementById('genre-select');
 
     if (carouselContainer) { // Halaman Utama
-        // REVISI: Memanggil carousel dengan endpoint film yang sedang tayang
         fetchAndBuildCarousel(apiEndpoints.nowPlayingMovies, carouselContainer);
         fetchAndDisplayMedia(apiEndpoints.horrorMovies, document.getElementById('horror-list'));
         fetchAndDisplayMedia(apiEndpoints.trendingTv, document.getElementById('trending-tv-list'));
