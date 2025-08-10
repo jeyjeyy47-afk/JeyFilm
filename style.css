@@ -15,7 +15,7 @@ body {
     align-items: center;
     padding: 0 36px;
     box-sizing: border-box;
-    position: sticky; /* Membuat navbar tetap di atas saat scroll */
+    position: sticky;
     top: 0;
     z-index: 10;
 }
@@ -174,10 +174,11 @@ body {
     gap: 20px;
     overflow-x: auto;
     padding-bottom: 20px;
-    scrollbar-width: none; /* Firefox */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
 }
 .video-card-list::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Opera */
+    display: none;
 }
 
 /* Gaya untuk Kartu Film Individual (Dapat Digunakan Kembali) */
@@ -285,13 +286,16 @@ body {
     .nav-links {
         display: none;
     }
-
-    .right-container .sub-btn {
-        display: none;
+    
+    /* PERBAIKAN: Tombol berlangganan tidak lagi disembunyikan. */
+    /* Sebagai gantinya, kita bisa memperkecil paddingnya jika perlu */
+    .sub-btn {
+        padding: 8px 12px;
+        margin: 0 10px;
     }
 
     .search-box {
-        width: 180px;
+        width: 150px;
     }
 
     .carousel-container {
@@ -370,8 +374,14 @@ body {
     }
 
     .search-box {
-        width: 120px;
+        width: 100px;
         font-size: 14px;
+    }
+    
+    .sub-btn {
+        padding: 6px 8px;
+        font-size: 12px;
+        margin: 0 8px;
     }
     
     .login-link {
