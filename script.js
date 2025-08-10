@@ -5,7 +5,8 @@ const apiEndpoints = {
     trendingMovies: `https://api.themoviedb.org/3/trending/movie/week?api_key=${apiKey}&language=id-ID`,
     horrorMovies: `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&language=id-ID&with_genres=27&sort_by=popularity.desc`,
     trendingTv: `https://api.themoviedb.org/3/trending/tv/week?api_key=${apiKey}&language=id-ID`,
-    upcomingMovies: `https://api.themoviedb.org/3/movie/upcoming?api_key=${apiKey}&language=id-ID&page=1`
+    upcomingMovies: `https://api.themoviedb.org/3/movie/upcoming?api_key=${apiKey}&language=id-ID&page=1`,
+    search: `https://api.themoviedb.org/3/search/multi?api_key=${apiKey}&language=id-ID&query=`
 };
 
 const imageBaseUrl = 'https://image.tmdb.org/t/p/';
@@ -17,8 +18,11 @@ const createMediaCard = (item) => {
     const cardLink = document.createElement('a');
     cardLink.className = 'card';
     
-    // Tentukan tipe media berdasarkan keberadaan properti 'title' (untuk film) atau 'name' (untuk TV)
-    const mediaType = item.title ? 'movie' : 'tv';
+    // Gunakan media_type jika tersedia (dari pencarian), jika tidak, tentukan berdasarkan properti
+    const mediaType = item.media_type || (item.title ? 'movie' : 'tv');
+    
+    // Jangan buat kartu untuk tipe 'person' dari hasil pencarian
+    if (mediaType === 'person') return null;
     
     // Membuat URL yang akan dibuka saat kartu diklik
     cardLink.href = `player.html?id=${item.id}&type=${mediaType}&title=${encodeURIComponent(item.title || item.name)}`;
@@ -37,7 +41,7 @@ const createMediaCard = (item) => {
 
     const description = document.createElement('h6');
     description.className = 'des';
-    description.textContent = item.release_date ? `Rilis: ${item.release_date}` : `Rating: ${item.vote_average.toFixed(1)}`;
+    description.textContent = item.release_date ? `Rilis: ${item.release_date}` : `Rating: ${item.vote_average ? item.vote_average.toFixed(1) : 'N/A'}`;
 
     const watchlistBtn = document.createElement('button');
     watchlistBtn.className = 'watchlist-btn';
@@ -102,16 +106,14 @@ const fetchAndBuildSection = async (endpoint, container) => {
     }
 };
 
-// --- LOGIKA UTAMA: DETEKSI HALAMAN DAN JALANKAN FUNGSI ---
+// --- LOGIKA UTAMA: DETEKSI HALAMAN, PENCARIAN, DAN JALANKAN FUNGSI ---
 document.addEventListener('DOMContentLoaded', () => {
-    // Cari elemen unik untuk setiap halaman
+    // --- Logika Deteksi Halaman ---
     const carouselContainer = document.querySelector('.carousel');
     const upcomingGridContainer = document.getElementById('upcoming-movies-grid');
     const playerContainer = document.getElementById('player-container');
 
-    // Cek halaman mana yang sedang aktif
     if (carouselContainer) { // Halaman Utama
-        console.log("Halaman utama terdeteksi.");
         const horrorListContainer = document.getElementById('horror-list');
         const trendingTvListContainer = document.getElementById('trending-tv-list');
         fetchAndBuildCarousel(carouselContainer);
@@ -119,46 +121,100 @@ document.addEventListener('DOMContentLoaded', () => {
         fetchAndBuildSection(apiEndpoints.trendingTv, trendingTvListContainer);
     } 
     else if (upcomingGridContainer) { // Halaman Film
-        console.log("Halaman Film terdeteksi.");
         fetchAndBuildSection(apiEndpoints.upcomingMovies, upcomingGridContainer);
     }
     else if (playerContainer) { // Halaman Player
-        console.log("Halaman Player terdeteksi.");
         const params = new URLSearchParams(window.location.search);
         const mediaId = params.get('id');
         const mediaType = params.get('type');
         const mediaTitle = params.get('title');
-        
-        // Menampilkan data yang kita dapat dari URL ke konsol
-        console.log("ID Media:", mediaId);
-        console.log("Tipe Media:", mediaType);
-        console.log("Judul Media:", mediaTitle);
-
         const titleElement = document.getElementById('movie-player-title');
-
         if (mediaId && mediaType) {
-            // Perbarui judul halaman dan tab browser
             titleElement.textContent = mediaTitle || "Memuat film...";
             document.title = `Nonton ${mediaTitle || 'Film'} - kingmovie-nobar gratis`;
-
-            // MEMBUAT URL EMBED - MENGGUNAKAN FORMAT BARU YANG DIMINTA
-            // PERHATIAN: URL ini diasumsikan hanya untuk FILM.
-            // Jika serial TV juga perlu format berbeda, logika tambahan diperlukan.
             const embedUrl = `https://vidfast.pro/movie/${mediaId}`;
-
-            console.log("Mencoba memuat iframe dengan URL:", embedUrl);
-
-            // Membuat dan menambahkan iframe ke halaman
             const iframe = document.createElement('iframe');
             iframe.src = embedUrl;
             iframe.setAttribute('allowfullscreen', 'true');
             iframe.setAttribute('frameborder', '0');
-            
             playerContainer.appendChild(iframe);
         } else {
-            console.error("Kesalahan: ID atau Tipe media tidak ditemukan di URL.");
             titleElement.textContent = "Error: Film tidak dapat dimuat";
-            playerContainer.innerHTML = '<p>Parameter tidak lengkap. Silakan kembali dan pilih film atau serial TV lain.</p>';
+            playerContainer.innerHTML = '<p>Parameter tidak lengkap.</p>';
         }
     }
+
+    // --- LOGIKA PENCARIAN REAL-TIME ---
+    const searchBox = document.querySelector('.search-box');
+    const mainContainers = [
+        document.querySelector('.carousel-container'),
+        ...document.querySelectorAll('.video-card-container'),
+        document.querySelector('.main-content')
+    ].filter(el => el != null); // Ambil semua kontainer konten utama
+
+    let searchResultsWrapper; // Deklarasikan di sini
+
+    let debounceTimeout;
+
+    const handleSearch = async (query) => {
+        // Buat kontainer hasil pencarian jika belum ada
+        if (!searchResultsWrapper) {
+            searchResultsWrapper = document.createElement('div');
+            searchResultsWrapper.className = 'main-content'; // Gunakan style yang sama
+            searchResultsWrapper.id = 'search-results-wrapper';
+            // Sisipkan setelah navbar
+            document.body.insertBefore(searchResultsWrapper, document.querySelector('nav').nextSibling);
+        }
+
+        if (!query) {
+            // Jika query kosong, tampilkan konten asli dan sembunyikan hasil pencarian
+            mainContainers.forEach(container => container.style.display = '');
+            searchResultsWrapper.style.display = 'none';
+            searchResultsWrapper.innerHTML = '';
+            return;
+        }
+
+        // Jika ada query, sembunyikan konten asli dan tampilkan kontainer pencarian
+        mainContainers.forEach(container => container.style.display = 'none');
+        searchResultsWrapper.style.display = 'block';
+
+        try {
+            const response = await fetch(`${apiEndpoints.search}${encodeURIComponent(query)}`);
+            const data = await response.json();
+            
+            searchResultsWrapper.innerHTML = ''; // Bersihkan hasil sebelumnya
+
+            const title = document.createElement('h1');
+            title.textContent = `Hasil Pencarian untuk "${query}"`;
+            searchResultsWrapper.appendChild(title);
+
+            const grid = document.createElement('div');
+            grid.className = 'movie-grid';
+
+            const validResults = data.results.filter(item => item.media_type !== 'person' && item.poster_path);
+
+            if (validResults.length > 0) {
+                validResults.forEach(item => {
+                    const card = createMediaCard(item);
+                    if (card) grid.appendChild(card);
+                });
+            } else {
+                grid.innerHTML = '<p>Tidak ada hasil yang ditemukan.</p>';
+            }
+            
+            searchResultsWrapper.appendChild(grid);
+
+        } catch (error) {
+            console.error('Gagal melakukan pencarian:', error);
+            searchResultsWrapper.innerHTML = '<h1>Error</h1><p>Gagal memuat hasil pencarian.</p>';
+        }
+    };
+
+    searchBox.addEventListener('input', (e) => {
+        clearTimeout(debounceTimeout);
+        const query = e.target.value.trim();
+        debounceTimeout = setTimeout(() => {
+            handleSearch(query);
+        }, 500); // Tunda eksekusi selama 500ms setelah pengguna berhenti mengetik
+    });
 });
