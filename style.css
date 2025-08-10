@@ -103,7 +103,6 @@ body {
     height: 100%;
     position: relative;
     margin: auto;
-    /* REVISI: Menambahkan transisi untuk animasi slide yang mulus */
     transition: transform 1s ease-in-out;
 }
 
@@ -115,8 +114,11 @@ body {
     position: relative;
     background: #192133;
     overflow: hidden;
-    /* REVISI: Menghapus margin agar tidak ada celah antar slide */
     margin-right: 0; 
+    /* REVISI: Menambahkan properti ini untuk menonaktifkan gaya link default */
+    display: block;
+    text-decoration: none;
+    color: inherit;
 }
 
 .slider img {
