@@ -5,7 +5,6 @@ const apiEndpoints = {
     trendingMovies: `https://api.themoviedb.org/3/trending/movie/week?api_key=${apiKey}&language=id-ID`,
     horrorMovies: `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&language=id-ID&with_genres=27&sort_by=popularity.desc`,
     trendingTv: `https://api.themoviedb.org/3/trending/tv/week?api_key=${apiKey}&language=id-ID`,
-    // ENDPOINT BARU untuk film populer sebagai default di halaman film
     popularMovies: `https://api.themoviedb.org/3/movie/popular?api_key=${apiKey}&language=id-ID&page=1`,
     sportsMovies: `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&language=id-ID&sort_by=popularity.desc&with_genres=18&with_keywords=9715`,
     search: `https://api.themoviedb.org/3/search/multi?api_key=${apiKey}&language=id-ID&query=`,
@@ -135,28 +134,21 @@ document.addEventListener('DOMContentLoaded', () => {
         fetchAndDisplayMedia(apiEndpoints.trendingTv, document.getElementById('trending-tv-list'));
     } 
     
-    // =========================================================================
-    // BAGIAN INI TELAH DIPERBAIKI SECARA SPESIFIK
-    // =========================================================================
     else if (genreSelect) { // Logika untuk halaman Film (film.html)
         console.log("Halaman Film terdeteksi, menginisialisasi filter genre.");
 
-        const movieGrid = document.getElementById('movie-grid-container');
+        // Pastikan kita mendapatkan elemen yang benar dengan ID yang sudah disinkronkan
+        const movieGrid = document.getElementById('movie-grid-container'); 
         const pageTitle = document.getElementById('page-title');
 
-        // Fungsi untuk menginisialisasi halaman: mengisi genre dan memuat film default
         const initializeFilmPage = async () => {
-            pageTitle.textContent = 'Film Populer';
-
             // 1. Mengisi dropdown genre
             try {
                 const response = await fetch(apiEndpoints.movieGenres);
                 const data = await response.json();
                 
-                // Tambahkan opsi default "Semua (Populer)" terlebih dahulu
                 genreSelect.innerHTML = `<option value="">Semua (Populer)</option>`;
                 
-                // Tambahkan semua genre dari API
                 data.genres.forEach(genre => {
                     genreSelect.innerHTML += `<option value="${genre.id}">${genre.name}</option>`;
                 });
@@ -165,7 +157,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 genreSelect.innerHTML = `<option value="">Gagal memuat genre</option>`;
             }
 
-            // 2. Muat film default (POPULER) setelah genre selesai dimuat
+            // 2. Muat film default (POPULER)
+            pageTitle.textContent = 'Film Populer';
             await fetchAndDisplayMedia(apiEndpoints.popularMovies, movieGrid);
         };
 
@@ -175,23 +168,17 @@ document.addEventListener('DOMContentLoaded', () => {
             const genreName = genreSelect.options[genreSelect.selectedIndex].text;
 
             if (genreId) {
-                // Jika sebuah genre dipilih, ambil film berdasarkan genre tersebut
                 pageTitle.textContent = `Film Genre: ${genreName}`;
                 const genreEndpoint = `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&language=id-ID&sort_by=popularity.desc&with_genres=${genreId}`;
                 fetchAndDisplayMedia(genreEndpoint, movieGrid);
             } else {
-                // Jika "Semua (Populer)" dipilih, kembali ke daftar film populer
                 pageTitle.textContent = 'Film Populer';
                 fetchAndDisplayMedia(apiEndpoints.popularMovies, movieGrid);
             }
         });
 
-        // Jalankan fungsi inisialisasi saat halaman dimuat
         initializeFilmPage();
     }
-    // =========================================================================
-    // AKHIR DARI BAGIAN YANG DIPERBAIKI
-    // =========================================================================
 
     else if (sportsGridContainer) { // Halaman Olahraga (olahraga.html)
         console.log("Halaman Olahraga terdeteksi.");
