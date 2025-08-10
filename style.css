@@ -1,0 +1,237 @@
+/* Pengaturan Dasar Body */
+body {
+    background-color: #040714;
+    color: #f9f9f9;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    margin: 0;
+}
+
+/* Gaya untuk Navbar */
+.navbar {
+    width: 100%;
+    height: 70px;
+    background-color: #090b13;
+    display: flex;
+    align-items: center;
+    padding: 0 36px;
+    box-sizing: border-box;
+}
+
+.brand-logo {
+    height: 50px;
+}
+
+.nav-links {
+    display: flex;
+    list-style: none;
+    margin-left: 25px;
+    padding: 0;
+}
+
+.nav-items a {
+    text-decoration: none;
+    color: #f9f9f9;
+    padding: 0 15px;
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 1px;
+    position: relative;
+}
+
+/* Efek garis bawah saat hover di menu navigasi */
+.nav-items a:after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: -6px;
+    width: 100%;
+    height: 2px;
+    background: #f9f9f9;
+    transform: scaleX(0);
+    transition: transform 0.3s ease-in-out;
+}
+
+.nav-items a:hover:after {
+    transform: scaleX(1);
+}
+
+.right-container {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+}
+
+.search-box {
+    border: none;
+    background: transparent;
+    border-bottom: 1px solid #aaa;
+    color: #f9f9f9;
+    padding: 5px;
+    width: 250px;
+    font-size: 16px;
+    transition: width 0.3s;
+}
+
+.search-box:focus {
+    width: 300px;
+    outline: none;
+}
+
+.sub-btn {
+    background-color: #1f80e0;
+    color: #f9f9f9;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    margin: 0 20px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.login-link {
+    color: #f9f9f9;
+    text-decoration: none;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+/* Gaya untuk Korsel Gambar */
+.carousel-container {
+    position: relative;
+    width: 100%;
+    height: 450px;
+    padding: 20px 0;
+    overflow-x: hidden;
+}
+
+.carousel {
+    display: flex;
+    width: 92%;
+    height: 100%;
+    position: relative;
+    margin: auto;
+}
+
+.slider {
+    flex-shrink: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 10px;
+    margin-right: 30px;
+    position: relative;
+    transition: 1s;
+    background: #192133;
+}
+
+.slider img {
+    width: 70%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    margin-left: auto;
+}
+
+.slide-content {
+    position: absolute;
+    width: 50%;
+    height: 100%;
+    z-index: 2;
+    background: linear-gradient(to right, #030b17 80%, #0c111b00);
+    color: #fff;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.movie-title {
+    font-size: 50px;
+    text-transform: capitalize;
+}
+
+.movie-des {
+    width: 80%;
+    line-height: 1.6;
+    margin-top: 30px;
+}
+
+/* Gaya untuk Kartu Film */
+.video-card-container {
+    position: relative;
+    width: 92%;
+    margin: auto;
+    padding: 20px 0;
+}
+
+.video-card-list {
+    display: flex;
+    gap: 20px;
+    overflow-x: auto;
+    padding-bottom: 20px;
+    scrollbar-width: none; /* Firefox */
+}
+.video-card-list::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+}
+
+.card {
+    position: relative;
+    min-width: 150px;
+    width: 150px;
+    height: 220px;
+    border-radius: 5px;
+    overflow: hidden;
+    cursor: pointer;
+    background: #192133;
+    transition: transform 0.3s;
+}
+
+.card:hover {
+    transform: scale(1.1);
+}
+
+.card-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.card-body {
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    background: linear-gradient(to bottom, rgba(4, 8, 15, 0), #192133 90%);
+    transition: opacity 0.5s;
+    padding: 20px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+.card:hover .card-body {
+    opacity: 1;
+}
+
+.name {
+    font-size: 18px;
+    margin: 0;
+}
+
+.des {
+    font-size: 12px;
+    margin: 5px 0;
+}
+
+.watchlist-btn {
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid #fff;
+    color: #fff;
+    border-radius: 20px;
+    padding: 5px 10px;
+    font-size: 12px;
+    text-transform: capitalize;
+    cursor: pointer;
+    margin-top: 10px;
+}
