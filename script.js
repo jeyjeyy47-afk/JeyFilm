@@ -6,6 +6,8 @@ const apiEndpoints = {
     horrorMovies: `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&language=id-ID&with_genres=27&sort_by=popularity.desc`,
     trendingTv: `https://api.themoviedb.org/3/trending/tv/week?api_key=${apiKey}&language=id-ID`,
     upcomingMovies: `https://api.themoviedb.org/3/movie/upcoming?api_key=${apiKey}&language=id-ID&page=1`,
+    // Endpoint baru untuk film olahraga menggunakan kata kunci
+    sportsMovies: `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&language=id-ID&sort_by=popularity.desc&with_keywords=210024,10171,6075,8412,2226`,
     search: `https://api.themoviedb.org/3/search/multi?api_key=${apiKey}&language=id-ID&query=`
 };
 
@@ -112,8 +114,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const carouselContainer = document.querySelector('.carousel');
     const upcomingGridContainer = document.getElementById('upcoming-movies-grid');
     const playerContainer = document.getElementById('player-container');
+    const sportsGridContainer = document.getElementById('sports-movies-grid'); // Deteksi halaman olahraga
 
     if (carouselContainer) { // Halaman Utama
+        console.log("Halaman utama terdeteksi.");
         const horrorListContainer = document.getElementById('horror-list');
         const trendingTvListContainer = document.getElementById('trending-tv-list');
         fetchAndBuildCarousel(carouselContainer);
@@ -121,9 +125,15 @@ document.addEventListener('DOMContentLoaded', () => {
         fetchAndBuildSection(apiEndpoints.trendingTv, trendingTvListContainer);
     } 
     else if (upcomingGridContainer) { // Halaman Film
+        console.log("Halaman Film terdeteksi.");
         fetchAndBuildSection(apiEndpoints.upcomingMovies, upcomingGridContainer);
     }
+    else if (sportsGridContainer) { // Halaman Olahraga (BARU)
+        console.log("Halaman Olahraga terdeteksi.");
+        fetchAndBuildSection(apiEndpoints.sportsMovies, sportsGridContainer);
+    }
     else if (playerContainer) { // Halaman Player
+        console.log("Halaman Player terdeteksi.");
         const params = new URLSearchParams(window.location.search);
         const mediaId = params.get('id');
         const mediaType = params.get('type');
