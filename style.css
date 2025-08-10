@@ -296,6 +296,35 @@ body {
     border: none;
 }
 
+/* --- GAYA BARU UNTUK FILTER GENRE --- */
+.genre-filter {
+    margin-bottom: 30px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.genre-filter label {
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+#genre-select {
+    background-color: #090b13;
+    color: #f9f9f9;
+    border: 1px solid #1f80e0;
+    padding: 8px 12px;
+    border-radius: 5px;
+    font-size: 1rem;
+    cursor: pointer;
+    outline: none;
+}
+
+#genre-select:focus {
+    border-color: #fff;
+}
+
+
 /* --- Gaya Responsif untuk Mobile & Tablet --- */
 @media (max-width: 768px) {
     .navbar {
