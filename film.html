@@ -8,7 +8,7 @@
 </head>
 <body>
 
-    <!-- Navigasi Utama (Sama seperti di index.html) -->
+    <!-- Navigasi Utama -->
     <nav class="navbar">
         <a href="index.html">
             <img src="images/logo.png" class="brand-logo" alt="Logo">
@@ -21,7 +21,7 @@
         </ul>
         <div class="right-container">
             <input type="text" class="search-box" placeholder="Cari...">
-            <button class="sub-btn">Berlangganan</button>
+            <!-- Tombol Berlangganan Dihapus dari Sini -->
             <a href="#" class="login-link">Masuk</a>
         </div>
     </nav>
@@ -29,11 +29,11 @@
     <!-- Konten Utama untuk Film Mendatang -->
     <div class="main-content">
         <h1>Film Mendatang</h1>
-        <!-- Container ini akan diisi oleh JavaScript dengan kartu-kartu film -->
-        <div class="movie-grid" id="upcoming-movies-grid"></div>
+        <div class="movie-grid" id="upcoming-movies-grid">
+            <!-- Konten diisi oleh JavaScript -->
+        </div>
     </div>
 
-    <!-- Menggunakan file JavaScript yang sama -->
     <script src="script.js"></script>
 
 </body>
