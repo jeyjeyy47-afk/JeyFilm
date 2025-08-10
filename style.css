@@ -41,13 +41,12 @@ body {
     position: relative;
 }
 
-/* Efek garis bawah saat hover di menu navigasi */
 .nav-items a:after {
     content: '';
     position: absolute;
-    left: 15px; /* Sesuaikan dengan padding */
+    left: 15px;
     bottom: -6px;
-    width: calc(100% - 30px); /* Sesuaikan dengan padding */
+    width: calc(100% - 30px);
     height: 2px;
     background: #f9f9f9;
     transform: scaleX(0);
@@ -196,7 +195,7 @@ body {
 
 .card:hover {
     transform: scale(1.1);
-    z-index: 5; /* Memastikan kartu yang di-hover muncul di atas yang lain */
+    z-index: 5;
 }
 
 .card-img {
@@ -251,11 +250,9 @@ body {
     width: fit-content;
 }
 
-/* --- BARU: Gaya untuk Halaman Grid Film (film.html) --- */
-
-/* Gaya untuk konten utama di halaman sekunder */
+/* Gaya untuk Halaman Grid Film (film.html) */
 .main-content {
-    padding: 40px 4%; /* Memberi sedikit ruang di sisi kiri dan kanan */
+    padding: 40px 4%;
 }
 
 .main-content h1 {
@@ -267,17 +264,129 @@ body {
     display: inline-block;
 }
 
-/* Tata letak Grid untuk daftar film */
 .movie-grid {
     display: grid;
-    /* Membuat kolom-kolom yang responsif dan fleksibel */
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 25px; /* Jarak antar kartu */
+    gap: 25px;
 }
 
-/* Pastikan kartu di dalam grid tidak memiliki lebar minimum yang aneh */
 .movie-grid .card {
-    min-width: 0; /* Menghapus min-width dari aturan sebelumnya */
-    width: 100%; /* Membuat kartu mengisi kolom grid */
-    height: 270px; /* Mungkin perlu tinggi yang lebih besar di grid */
+    min-width: 0;
+    width: 100%;
+    height: 270px;
+}
+
+/* --- Gaya Responsif untuk Mobile & Tablet --- */
+@media (max-width: 768px) {
+    .navbar {
+        padding: 0 20px;
+    }
+
+    .nav-links {
+        display: none;
+    }
+
+    .right-container .sub-btn {
+        display: none;
+    }
+
+    .search-box {
+        width: 180px;
+    }
+
+    .carousel-container {
+        height: 250px;
+        padding: 10px 0;
+    }
+    
+    .slider {
+        margin-right: 10px;
+    }
+
+    .slider img {
+        width: 100%;
+        object-position: center;
+    }
+
+    .slide-content {
+        width: 100%;
+        padding: 20px;
+        background: linear-gradient(to right, rgba(4, 7, 20, 0.8) 60%, transparent);
+    }
+
+    .movie-title {
+        font-size: 28px;
+    }
+
+    .movie-des {
+        font-size: 12px;
+        width: 90%;
+        margin-top: 10px;
+        line-height: 1.4;
+    }
+
+    .video-card-container,
+    .main-content {
+        padding: 20px;
+        width: auto;
+    }
+    
+    .video-card-container h2,
+    .main-content h1 {
+        font-size: 20px;
+    }
+
+    .video-card-list {
+        gap: 10px;
+    }
+
+    .movie-grid {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 15px;
+    }
+
+    .grid-item .card, .movie-grid .card {
+        height: 210px;
+    }
+    
+    .card {
+        min-width: 140px;
+        width: 140px;
+        height: 210px;
+    }
+    
+    .card:hover {
+        transform: scale(1.05); 
+    }
+}
+
+@media (max-width: 480px) {
+    .navbar {
+        padding: 0 10px;
+    }
+    
+    .brand-logo {
+        height: 40px;
+    }
+
+    .search-box {
+        width: 120px;
+        font-size: 14px;
+    }
+    
+    .login-link {
+        font-size: 14px;
+    }
+
+    .movie-title {
+        font-size: 22px;
+    }
+    
+    .movie-des {
+        display: none;
+    }
+
+    .movie-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }
