@@ -1,83 +1,127 @@
-// Data film sampel (dalam aplikasi nyata, ini akan berasal dari server/API)
-const movies = [
-    {
-        name: 'Loki',
-        des: 'Setelah mencuri Tesseract, Loki mendapati dirinya berada dalam masalah dengan Otoritas Varians Waktu birokrasi, memaksanya untuk memperbaiki garis waktu.',
-        image: 'images/slider2.png'
-    },
-    {
-        name: 'The Falcon and The Winter Soldier',
-        des: 'Falcon dan Winter Soldier bekerja sama dalam petualangan global yang menguji kemampuan dan kesabaran mereka.',
-        image: 'images/slider1.png'
-    },
-    {
-        name: 'WandaVision',
-        des: 'Wanda Maximoff dan Vision—dua makhluk super yang menjalani kehidupan pinggiran kota yang ideal—mulai curiga bahwa semuanya tidak seperti yang terlihat.',
-        image: 'images/slider3.png'
-    },
-    {
-        name: 'Raya and the Last Dragon',
-        des: 'Di dunia fantasi Kumandra, seorang pejuang bernama Raya bertekad untuk menemukan naga terakhir untuk menyelamatkan dunia.',
-        image: 'images/slider4.png'
-    },
-    {
-        name: 'Luca',
-        des: 'Di Riviera Italia, sebuah persahabatan yang tak terlupakan tumbuh antara seorang manusia dan monster laut yang menyamar sebagai manusia.',
-        image: 'images/slider5.png'
+// --- Konfigurasi API TMDB ---
+const apiKey = 'bd7f7c2373a157c90b6d8585680b194c';
+
+// URL untuk mengambil data dari TMDB
+const apiEndpoints = {
+    trendingMovies: `https://api.themoviedb.org/3/trending/movie/week?api_key=${apiKey}&language=id-ID`,
+    popularMovies: `https://api.themoviedb.org/3/movie/popular?api_key=${apiKey}&language=id-ID`,
+    trendingTv: `https://api.themoviedb.org/3/trending/tv/week?api_key=${apiKey}&language=id-ID`
+};
+
+// URL dasar untuk gambar
+const imageBaseUrl = 'https://image.tmdb.org/t/p/';
+
+// --- Mengambil Kontainer dari HTML ---
+const carouselContainer = document.querySelector('.carousel');
+const popularMoviesContainer = document.getElementById('popular-list');
+const trendingTvContainer = document.getElementById('trending-tv-list');
+
+// --- Fungsi untuk Mengambil Data dan Menampilkan ---
+
+// Fungsi untuk membuat korsel utama
+const fetchAndBuildCarousel = async () => {
+    try {
+        const response = await fetch(apiEndpoints.trendingMovies);
+        const data = await response.json();
+        const movies = data.results;
+
+        // Ambil 5 film pertama untuk korsel
+        movies.slice(0, 5).forEach(movie => {
+            const slide = document.createElement('div');
+            const imgElement = document.createElement('img');
+            const content = document.createElement('div');
+            const h1 = document.createElement('h1');
+            const p = document.createElement('p');
+
+            h1.textContent = movie.title;
+            p.textContent = movie.overview;
+            // Gunakan backdrop_path untuk gambar korsel yang lebih lebar
+            imgElement.src = `${imageBaseUrl}w1280${movie.backdrop_path}`;
+            
+            content.appendChild(h1);
+            content.appendChild(p);
+            slide.appendChild(content);
+            slide.appendChild(imgElement);
+            
+            slide.className = 'slider';
+            content.className = 'slide-content';
+            h1.className = 'movie-title';
+            p.className = 'movie-des';
+
+            carouselContainer.appendChild(slide);
+        });
+    } catch (error) {
+        console.error('Error fetching trending movies:', error);
     }
-];
+};
 
-const carousel = document.querySelector('.carousel');
-let sliders = [];
-let slideIndex = 0; // untuk melacak slide saat ini
+// Fungsi generik untuk membuat baris kartu film atau TV
+const buildMediaRow = (mediaList, container) => {
+    mediaList.forEach(item => {
+        // Hanya tampilkan item yang memiliki poster
+        if (item.poster_path) {
+            const card = document.createElement('div');
+            card.className = 'card';
 
-const createSlide = () => {
-    // Memberikan efek reset jika slide sudah mencapai akhir
-    if (slideIndex >= movies.length) {
-        slideIndex = 0;
+            const cardImg = document.createElement('img');
+            cardImg.className = 'card-img';
+            cardImg.src = `${imageBaseUrl}w500${item.poster_path}`;
+            
+            const cardBody = document.createElement('div');
+            cardBody.className = 'card-body';
+            
+            // TMDB menggunakan 'title' untuk film dan 'name' untuk serial TV
+            const title = document.createElement('h2');
+            title.className = 'name';
+            title.textContent = item.title || item.name;
+
+            const description = document.createElement('h6');
+            description.className = 'des';
+            description.textContent = 'Rating: ' + item.vote_average.toFixed(1);
+
+            const watchlistBtn = document.createElement('button');
+            watchlistBtn.className = 'watchlist-btn';
+            watchlistBtn.textContent = 'info lebih lanjut';
+
+            cardBody.appendChild(title);
+            cardBody.appendChild(description);
+            cardBody.appendChild(watchlistBtn);
+            
+            card.appendChild(cardImg);
+            card.appendChild(cardBody);
+
+            container.appendChild(card);
+        }
+    });
+};
+
+
+// Fungsi untuk mengambil film populer dan menampilkannya
+const fetchAndShowPopularMovies = async () => {
+    try {
+        const response = await fetch(apiEndpoints.popularMovies);
+        const data = await response.json();
+        buildMediaRow(data.results, popularMoviesContainer);
+    } catch (error) {
+        console.error('Error fetching popular movies:', error);
     }
+};
 
-    // Membuat Elemen DOM
-    let slide = document.createElement('div');
-    let imgElement = document.createElement('img');
-    let content = document.createElement('div');
-    let h1 = document.createElement('h1');
-    let p = document.createElement('p');
-
-    // Mengambil dan menempelkan data
-    h1.appendChild(document.createTextNode(movies[slideIndex].name));
-    p.appendChild(document.createTextNode(movies[slideIndex].des));
-    imgElement.src = movies[slideIndex].image;
-    
-    // Menyusun elemen
-    content.appendChild(h1);
-    content.appendChild(p);
-    slide.appendChild(content);
-    slide.appendChild(imgElement);
-    carousel.appendChild(slide);
-
-    // Menambahkan kelas CSS
-    slide.className = 'slider';
-    content.className = 'slide-content';
-    h1.className = 'movie-title';
-    p.className = 'movie-des';
-
-    sliders.push(slide);
-
-    // Efek geser slide
-    if (sliders.length) {
-        sliders[0].style.marginLeft = `calc(-${100 * (sliders.length - 2)}% - ${30 * (sliders.length - 2)}px)`;
+// Fungsi untuk mengambil serial TV tren dan menampilkannya
+const fetchAndShowTrendingTv = async () => {
+    try {
+        const response = await fetch(apiEndpoints.trendingTv);
+        const data = await response.json();
+        buildMediaRow(data.results, trendingTvContainer);
+    } catch (error) {
+        console.error('Error fetching trending TV shows:', error);
     }
+};
 
-    slideIndex++;
-}
 
-// Membuat slide awal
-for (let i = 0; i < 3; i++) {
-    createSlide();
-}
-
-// Mengganti slide setiap 3 detik
-setInterval(() => {
-    createSlide();
-}, 3000);
+// --- Panggil Semua Fungsi Saat Halaman Dimuat ---
+document.addEventListener('DOMContentLoaded', () => {
+    fetchAndBuildCarousel();
+    fetchAndShowPopularMovies();
+    fetchAndShowTrendingTv();
+});
