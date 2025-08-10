@@ -6,7 +6,8 @@ const apiEndpoints = {
     horrorMovies: `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&language=id-ID&with_genres=27&sort_by=popularity.desc`,
     trendingTv: `https://api.themoviedb.org/3/trending/tv/week?api_key=${apiKey}&language=id-ID`,
     popularMovies: `https://api.themoviedb.org/3/movie/popular?api_key=${apiKey}&language=id-ID&page=1`,
-    sportsMovies: `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&language=id-ID&sort_by=popularity.desc&with_genres=18&with_keywords=9715`,
+    // DIUBAH: sportsMovies menjadi fantasyMovies dengan genre ID 14
+    fantasyMovies: `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&language=id-ID&with_genres=14&sort_by=popularity.desc`,
     search: `https://api.themoviedb.org/3/search/multi?api_key=${apiKey}&language=id-ID&query=`,
     movieGenres: `https://api.themoviedb.org/3/genre/movie/list?api_key=${apiKey}&language=id-ID`
 };
@@ -65,7 +66,6 @@ const fetchAndDisplayMedia = async (endpoint, container) => {
     }
 };
 
-// REVISI: Fungsi carousel sekarang membuat elemen <a> agar bisa diklik
 const fetchAndBuildCarousel = async (endpoint, container) => {
     if (!container) return;
     try {
@@ -77,10 +77,8 @@ const fetchAndBuildCarousel = async (endpoint, container) => {
         if (movies.length === 0) return;
 
         movies.forEach(movie => {
-            // REVISI: Membuat elemen <a> bukan <div>
             const slide = document.createElement('a'); 
             slide.className = 'slider';
-            // REVISI: Menambahkan href ke halaman player
             slide.href = `player.html?id=${movie.id}&type=movie&title=${encodeURIComponent(movie.title)}`;
 
             slide.innerHTML = `
@@ -93,13 +91,9 @@ const fetchAndBuildCarousel = async (endpoint, container) => {
             container.appendChild(slide);
         });
 
-        // Logika slider otomatis tetap sama
         let slideIndex = 0;
         setInterval(() => {
-            slideIndex++;
-            if (slideIndex >= movies.length) {
-                slideIndex = 0;
-            }
+            slideIndex = (slideIndex + 1) % movies.length;
             container.style.transform = `translateX(-${slideIndex * 100}%)`;
         }, 5000);
 
@@ -115,7 +109,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const carouselContainer = document.querySelector('.carousel');
     const playerContainer = document.getElementById('player-container');
-    const sportsGridContainer = document.getElementById('sports-movies-grid');
+    // DIUBAH: Mencari kontainer fantasi
+    const fantasyGridContainer = document.getElementById('fantasy-movies-grid');
     const genreSelect = document.getElementById('genre-select');
 
     if (carouselContainer) { // Halaman Utama
@@ -155,8 +150,10 @@ document.addEventListener('DOMContentLoaded', () => {
         initializeFilmPage();
     }
 
-    else if (sportsGridContainer) { // Halaman Olahraga
-        fetchAndDisplayMedia(apiEndpoints.sportsMovies, sportsGridContainer);
+    // DIUBAH: Blok logika sekarang untuk halaman fantasi
+    else if (fantasyGridContainer) { // Halaman Fantasi
+        console.log("Halaman Fantasi terdeteksi.");
+        fetchAndDisplayMedia(apiEndpoints.fantasyMovies, fantasyGridContainer);
     }
     
     else if (playerContainer) { // Halaman Player
