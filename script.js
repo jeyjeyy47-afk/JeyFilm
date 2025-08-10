@@ -12,7 +12,6 @@ const imageBaseUrl = 'https://image.tmdb.org/t/p/';
 
 // --- Fungsi Generik untuk Membuat Kartu Media (Film atau TV) ---
 const createMediaCard = (item) => {
-    // Jangan buat kartu jika tidak ada poster
     if (!item.poster_path) return null;
 
     const card = document.createElement('div');
@@ -25,14 +24,12 @@ const createMediaCard = (item) => {
     const cardBody = document.createElement('div');
     cardBody.className = 'card-body';
     
-    // Gunakan 'title' untuk film dan 'name' untuk serial TV
     const title = document.createElement('h2');
     title.className = 'name';
     title.textContent = item.title || item.name;
 
     const description = document.createElement('h6');
     description.className = 'des';
-    // Tampilkan tanggal rilis jika ada, jika tidak tampilkan rating
     if (item.release_date) {
         description.textContent = `Rilis: ${item.release_date}`;
     } else {
@@ -55,12 +52,10 @@ const createMediaCard = (item) => {
 
 // --- Fungsi untuk Mengambil Data dan Menampilkannya ---
 
-// Fungsi untuk membuat korsel utama
 const fetchAndBuildCarousel = async (container) => {
     try {
         const response = await fetch(apiEndpoints.trendingMovies);
         const data = await response.json();
-        // Ambil 5 film pertama untuk korsel
         data.results.slice(0, 5).forEach(movie => {
             const slide = document.createElement('div');
             slide.className = 'slider';
@@ -91,14 +86,13 @@ const fetchAndBuildCarousel = async (container) => {
     }
 };
 
-// Fungsi umum untuk mengambil data dan membangun baris atau grid
 const fetchAndBuildSection = async (endpoint, container) => {
     try {
         const response = await fetch(endpoint);
         const data = await response.json();
         data.results.forEach(item => {
             const card = createMediaCard(item);
-            if (card) { // Pastikan kartu berhasil dibuat sebelum menambahkannya
+            if (card) {
                 container.appendChild(card);
             }
         });
@@ -109,22 +103,17 @@ const fetchAndBuildSection = async (endpoint, container) => {
 
 // --- LOGIKA UTAMA: DETEKSI HALAMAN DAN JALANKAN FUNGSI ---
 document.addEventListener('DOMContentLoaded', () => {
-    // Cek apakah kita di halaman utama dengan mencari elemen uniknya
     const carouselContainer = document.querySelector('.carousel');
     const horrorListContainer = document.getElementById('horror-list');
     const trendingTvListContainer = document.getElementById('trending-tv-list');
-
-    // Cek apakah kita di halaman film dengan mencari elemen uniknya
     const upcomingGridContainer = document.getElementById('upcoming-movies-grid');
 
-    // Jika elemen-elemen halaman utama ada, muat konten untuk halaman utama
     if (carouselContainer && horrorListContainer && trendingTvListContainer) {
         console.log("Halaman utama terdeteksi. Memuat konten...");
         fetchAndBuildCarousel(carouselContainer);
         fetchAndBuildSection(apiEndpoints.horrorMovies, horrorListContainer);
         fetchAndBuildSection(apiEndpoints.trendingTv, trendingTvListContainer);
     } 
-    // Jika elemen halaman film ada, muat konten untuk halaman film
     else if (upcomingGridContainer) {
         console.log("Halaman film terdeteksi. Memuat film mendatang...");
         fetchAndBuildSection(apiEndpoints.upcomingMovies, upcomingGridContainer);
