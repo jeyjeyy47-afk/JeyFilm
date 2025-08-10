@@ -5,7 +5,8 @@ const apiEndpoints = {
     trendingMovies: `https://api.themoviedb.org/3/trending/movie/week?api_key=${apiKey}&language=id-ID`,
     horrorMovies: `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&language=id-ID&with_genres=27&sort_by=popularity.desc`,
     trendingTv: `https://api.themoviedb.org/3/trending/tv/week?api_key=${apiKey}&language=id-ID`,
-    upcomingMovies: `https://api.themoviedb.org/3/movie/upcoming?api_key=${apiKey}&language=id-ID&page=1`,
+    // ENDPOINT BARU untuk film populer sebagai default di halaman film
+    popularMovies: `https://api.themoviedb.org/3/movie/popular?api_key=${apiKey}&language=id-ID&page=1`,
     sportsMovies: `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&language=id-ID&sort_by=popularity.desc&with_genres=18&with_keywords=9715`,
     search: `https://api.themoviedb.org/3/search/multi?api_key=${apiKey}&language=id-ID&query=`,
     movieGenres: `https://api.themoviedb.org/3/genre/movie/list?api_key=${apiKey}&language=id-ID`
@@ -135,7 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } 
     
     // =========================================================================
-    // BAGIAN INI TELAH DIPERBAIKI
+    // BAGIAN INI TELAH DIPERBAIKI SECARA SPESIFIK
     // =========================================================================
     else if (genreSelect) { // Logika untuk halaman Film (film.html)
         console.log("Halaman Film terdeteksi, menginisialisasi filter genre.");
@@ -145,13 +146,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Fungsi untuk menginisialisasi halaman: mengisi genre dan memuat film default
         const initializeFilmPage = async () => {
+            pageTitle.textContent = 'Film Populer';
+
             // 1. Mengisi dropdown genre
             try {
                 const response = await fetch(apiEndpoints.movieGenres);
                 const data = await response.json();
                 
-                // Tambahkan opsi default "Semua Genre" terlebih dahulu
-                genreSelect.innerHTML = `<option value="">Semua (Film Mendatang)</option>`;
+                // Tambahkan opsi default "Semua (Populer)" terlebih dahulu
+                genreSelect.innerHTML = `<option value="">Semua (Populer)</option>`;
                 
                 // Tambahkan semua genre dari API
                 data.genres.forEach(genre => {
@@ -162,8 +165,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 genreSelect.innerHTML = `<option value="">Gagal memuat genre</option>`;
             }
 
-            // 2. Muat film default (upcoming) setelah genre selesai dimuat
-            await fetchAndDisplayMedia(apiEndpoints.upcomingMovies, movieGrid);
+            // 2. Muat film default (POPULER) setelah genre selesai dimuat
+            await fetchAndDisplayMedia(apiEndpoints.popularMovies, movieGrid);
         };
 
         // Tambahkan event listener untuk merespons perubahan pada dropdown
@@ -177,9 +180,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const genreEndpoint = `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&language=id-ID&sort_by=popularity.desc&with_genres=${genreId}`;
                 fetchAndDisplayMedia(genreEndpoint, movieGrid);
             } else {
-                // Jika "Semua Genre" dipilih, kembali ke daftar film mendatang
-                pageTitle.textContent = 'Film Mendatang';
-                fetchAndDisplayMedia(apiEndpoints.upcomingMovies, movieGrid);
+                // Jika "Semua (Populer)" dipilih, kembali ke daftar film populer
+                pageTitle.textContent = 'Film Populer';
+                fetchAndDisplayMedia(apiEndpoints.popularMovies, movieGrid);
             }
         });
 
@@ -217,7 +220,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- LOGIKA PENCARIAN REAL-TIME ---
+    // --- LOGIKA PENCARIAN REAL-TIME (TIDAK BERUBAH) ---
     const searchBox = document.querySelector('.search-box');
     const mainContainers = [
         document.querySelector('.carousel-container'),
