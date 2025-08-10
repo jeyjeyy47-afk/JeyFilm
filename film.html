@@ -6,10 +6,7 @@
     <title>kingmovie-nobar gratis</title>
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/png" href="favicon.png">
-
-    <!-- KODE IKLAN POPUNDER DITAMBAHKAN DI SINI -->
-    <script type='text/javascript' src='//pl27388548.profitableratecpm.com/fc/8c/4d/fc8c4d4418104acb867ad5b65f72d975.js'></script>
-
+    <!-- Skrip iklan dipindahkan dari sini -->
 </head>
 <body>
 
@@ -41,6 +38,16 @@
     </div>
 
     <script src="script.js"></script>
+    
+    <!-- KODE IKLAN BARU DENGAN PEMICU KLIK -->
+    <script type="text/javascript">
+        document.body.addEventListener('click', function() {
+            var adScript = document.createElement('script');
+            adScript.type = 'text/javascript';
+            adScript.src = '//pl27388548.profitableratecpm.com/fc/8c/4d/fc8c4d4418104acb867ad5b65f72d975.js';
+            document.head.appendChild(adScript);
+        }, { once: true });
+    </script>
 
 </body>
 </html>
