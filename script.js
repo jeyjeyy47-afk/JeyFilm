@@ -6,9 +6,10 @@ const apiEndpoints = {
     horrorMovies: `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&language=id-ID&with_genres=27&sort_by=popularity.desc`,
     trendingTv: `https://api.themoviedb.org/3/trending/tv/week?api_key=${apiKey}&language=id-ID`,
     upcomingMovies: `https://api.themoviedb.org/3/movie/upcoming?api_key=${apiKey}&language=id-ID&page=1`,
-    // REVISI: Menggunakan kombinasi Genre Drama (18) dan Keyword Sport (9715) untuk hasil lebih relevan
     sportsMovies: `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&language=id-ID&sort_by=popularity.desc&with_genres=18&with_keywords=9715`,
-    search: `https://api.themoviedb.org/3/search/multi?api_key=${apiKey}&language=id-ID&query=`
+    search: `https://api.themoviedb.org/3/search/multi?api_key=${apiKey}&language=id-ID&query=`,
+    // ENDPOINT BARU UNTUK DAFTAR GENRE
+    movieGenres: `https://api.themoviedb.org/3/genre/movie/list?api_key=${apiKey}&language=id-ID`
 };
 
 const imageBaseUrl = 'https://image.tmdb.org/t/p/';
@@ -20,16 +21,12 @@ const createMediaCard = (item) => {
     const cardLink = document.createElement('a');
     cardLink.className = 'card';
     
-    // Gunakan media_type jika tersedia (dari pencarian), jika tidak, tentukan berdasarkan properti
     const mediaType = item.media_type || (item.title ? 'movie' : 'tv');
     
-    // Jangan buat kartu untuk tipe 'person' dari hasil pencarian
     if (mediaType === 'person') return null;
     
-    // Membuat URL yang akan dibuka saat kartu diklik
     cardLink.href = `player.html?id=${item.id}&type=${mediaType}&title=${encodeURIComponent(item.title || item.name)}`;
 
-    // --- Membangun elemen visual di dalam kartu ---
     const cardImg = document.createElement('img');
     cardImg.className = 'card-img';
     cardImg.src = `${imageBaseUrl}w500${item.poster_path}`;
@@ -97,6 +94,10 @@ const fetchAndBuildSection = async (endpoint, container) => {
     try {
         const response = await fetch(endpoint);
         const data = await response.json();
+        
+        // Selalu bersihkan kontainer sebelum menambahkan item baru
+        container.innerHTML = '';
+
         data.results.forEach(item => {
             const card = createMediaCard(item);
             if (card) {
@@ -105,6 +106,7 @@ const fetchAndBuildSection = async (endpoint, container) => {
         });
     } catch (error) {
         console.error(`Gagal memuat data dari ${endpoint}:`, error);
+        container.innerHTML = '<p>Gagal memuat film. Coba lagi nanti.</p>';
     }
 };
 
@@ -112,9 +114,9 @@ const fetchAndBuildSection = async (endpoint, container) => {
 document.addEventListener('DOMContentLoaded', () => {
     // --- Logika Deteksi Halaman ---
     const carouselContainer = document.querySelector('.carousel');
-    const upcomingGridContainer = document.getElementById('upcoming-movies-grid');
     const playerContainer = document.getElementById('player-container');
-    const sportsGridContainer = document.getElementById('sports-movies-grid'); // Deteksi halaman olahraga
+    const sportsGridContainer = document.getElementById('sports-movies-grid');
+    const genreSelect = document.getElementById('genre-select'); // Elemen kunci untuk halaman Film
 
     if (carouselContainer) { // Halaman Utama
         console.log("Halaman utama terdeteksi.");
@@ -124,11 +126,70 @@ document.addEventListener('DOMContentLoaded', () => {
         fetchAndBuildSection(apiEndpoints.horrorMovies, horrorListContainer);
         fetchAndBuildSection(apiEndpoints.trendingTv, trendingTvListContainer);
     } 
-    else if (upcomingGridContainer) { // Halaman Film
-        console.log("Halaman Film terdeteksi.");
-        fetchAndBuildSection(apiEndpoints.upcomingMovies, upcomingGridContainer);
+    else if (genreSelect) { // Halaman Film dengan Filter Genre
+        console.log("Halaman Film dengan filter terdeteksi.");
+        const movieGrid = document.getElementById('upcoming-movies-grid');
+        const pageTitle = document.getElementById('page-title');
+
+        // Fungsi untuk mengambil dan menampilkan film berdasarkan genre
+        const fetchMoviesByGenre = (genreId) => {
+            let endpoint = '';
+            if (genreId) {
+                // Endpoint untuk discover film berdasarkan genre
+                endpoint = `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&language=id-ID&sort_by=popularity.desc&with_genres=${genreId}`;
+            } else {
+                // Jika tidak ada genre dipilih, tampilkan film mendatang (default)
+                endpoint = apiEndpoints.upcomingMovies;
+            }
+            fetchAndBuildSection(endpoint, movieGrid);
+        };
+        
+        // Fungsi untuk mengisi dropdown genre
+        const populateGenres = async () => {
+            try {
+                const response = await fetch(apiEndpoints.movieGenres);
+                const data = await response.json();
+
+                // Opsi default
+                const defaultOption = document.createElement('option');
+                defaultOption.value = '';
+                defaultOption.textContent = 'Semua Genre';
+                genreSelect.appendChild(defaultOption);
+
+                // Isi dengan genre dari API
+                data.genres.forEach(genre => {
+                    const option = document.createElement('option');
+                    option.value = genre.id;
+                    option.textContent = genre.name;
+                    genreSelect.appendChild(option);
+                });
+
+            } catch (error) {
+                console.error("Gagal memuat genre:", error);
+            }
+        };
+
+        // Event listener untuk dropdown
+        genreSelect.addEventListener('change', (e) => {
+            const selectedGenreId = e.target.value;
+            const selectedGenreName = e.target.options[e.target.selectedIndex].text;
+            
+            // Perbarui judul halaman
+            if (selectedGenreId) {
+                pageTitle.textContent = `Film Genre: ${selectedGenreName}`;
+            } else {
+                pageTitle.textContent = 'Film Mendatang';
+            }
+
+            fetchMoviesByGenre(selectedGenreId);
+        });
+
+        // Panggil fungsi saat halaman dimuat pertama kali
+        populateGenres();
+        fetchMoviesByGenre(''); // Tampilkan film default (mendatang)
+
     }
-    else if (sportsGridContainer) { // Halaman Olahraga (BARU)
+    else if (sportsGridContainer) { // Halaman Olahraga
         console.log("Halaman Olahraga terdeteksi.");
         fetchAndBuildSection(apiEndpoints.sportsMovies, sportsGridContainer);
     }
@@ -154,22 +215,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- LOGIKA PENCARIAN REAL-TIME ---
+    // --- LOGIKA PENCARIAN REAL-TIME (TETAP SAMA) ---
     const searchBox = document.querySelector('.search-box');
     const mainContainers = [
         document.querySelector('.carousel-container'),
         ...document.querySelectorAll('.video-card-container'),
         document.querySelector('.main-content')
-    ].filter(el => el != null); 
+    ].filter(el => el != null);
 
-    let searchResultsWrapper; 
-
+    let searchResultsWrapper;
     let debounceTimeout;
 
     const handleSearch = async (query) => {
         if (!searchResultsWrapper) {
             searchResultsWrapper = document.createElement('div');
-            searchResultsWrapper.className = 'main-content'; 
+            searchResultsWrapper.className = 'main-content';
             searchResultsWrapper.id = 'search-results-wrapper';
             document.body.insertBefore(searchResultsWrapper, document.querySelector('nav').nextSibling);
         }
@@ -188,7 +248,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch(`${apiEndpoints.search}${encodeURIComponent(query)}`);
             const data = await response.json();
             
-            searchResultsWrapper.innerHTML = ''; 
+            searchResultsWrapper.innerHTML = '';
 
             const title = document.createElement('h1');
             title.textContent = `Hasil Pencarian untuk "${query}"`;
@@ -221,6 +281,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const query = e.target.value.trim();
         debounceTimeout = setTimeout(() => {
             handleSearch(query);
-        }, 500); 
+        }, 500);
     });
-});
+});```
