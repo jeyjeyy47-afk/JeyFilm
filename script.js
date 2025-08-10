@@ -8,7 +8,6 @@ const apiEndpoints = {
     upcomingMovies: `https://api.themoviedb.org/3/movie/upcoming?api_key=${apiKey}&language=id-ID&page=1`,
     sportsMovies: `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&language=id-ID&sort_by=popularity.desc&with_genres=18&with_keywords=9715`,
     search: `https://api.themoviedb.org/3/search/multi?api_key=${apiKey}&language=id-ID&query=`,
-    // ENDPOINT BARU UNTUK DAFTAR GENRE
     movieGenres: `https://api.themoviedb.org/3/genre/movie/list?api_key=${apiKey}&language=id-ID`
 };
 
@@ -16,6 +15,7 @@ const imageBaseUrl = 'https://image.tmdb.org/t/p/';
 
 // --- Fungsi Generik untuk Membuat Kartu Media ---
 const createMediaCard = (item) => {
+    // Pastikan item memiliki poster_path, jika tidak, jangan buat kartunya
     if (!item.poster_path) return null;
 
     const cardLink = document.createElement('a');
@@ -61,139 +61,139 @@ const createMediaCard = (item) => {
     return cardLink;
 };
 
-// --- Fungsi untuk Mengambil Data ---
-const fetchAndBuildCarousel = async (container) => {
-    try {
-        const response = await fetch(apiEndpoints.trendingMovies);
-        const data = await response.json();
-        data.results.slice(0, 5).forEach(movie => {
-            const slide = document.createElement('div');
-            slide.className = 'slider';
-            const imgElement = document.createElement('img');
-            imgElement.src = `${imageBaseUrl}w1280${movie.backdrop_path}`;
-            const content = document.createElement('div');
-            content.className = 'slide-content';
-            const h1 = document.createElement('h1');
-            h1.className = 'movie-title';
-            h1.textContent = movie.title;
-            const p = document.createElement('p');
-            p.className = 'movie-des';
-            p.textContent = movie.overview;
-            content.appendChild(h1);
-            content.appendChild(p);
-            slide.appendChild(content);
-            slide.appendChild(imgElement);
-            container.appendChild(slide);
-        });
-    } catch (error) {
-        console.error('Gagal memuat korsel:', error);
+// --- Fungsi Generik untuk Mengambil dan Menampilkan Data di Grid atau List ---
+const fetchAndDisplayMedia = async (endpoint, container) => {
+    // Pastikan container ada sebelum melanjutkan
+    if (!container) {
+        console.error("Kesalahan: Kontainer untuk menampilkan media tidak ditemukan.");
+        return;
     }
-};
 
-const fetchAndBuildSection = async (endpoint, container) => {
+    // Tampilkan pesan "Memuat..."
+    container.innerHTML = '<p style="text-align: center; width: 100%;">Memuat...</p>';
+    
     try {
         const response = await fetch(endpoint);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
         const data = await response.json();
         
-        // Selalu bersihkan kontainer sebelum menambahkan item baru
+        // Bersihkan pesan "Memuat..."
         container.innerHTML = '';
 
-        data.results.forEach(item => {
-            const card = createMediaCard(item);
-            if (card) {
-                container.appendChild(card);
-            }
-        });
+        if (data.results && data.results.length > 0) {
+            data.results.forEach(item => {
+                const card = createMediaCard(item);
+                if (card) { // Pastikan kartu berhasil dibuat
+                    container.appendChild(card);
+                }
+            });
+        } else {
+            container.innerHTML = '<p style="text-align: center; width: 100%;">Tidak ada hasil yang ditemukan.</p>';
+        }
     } catch (error) {
         console.error(`Gagal memuat data dari ${endpoint}:`, error);
-        container.innerHTML = '<p>Gagal memuat film. Coba lagi nanti.</p>';
+        container.innerHTML = '<p style="text-align: center; width: 100%;">Terjadi kesalahan saat memuat data.</p>';
     }
 };
+
 
 // --- LOGIKA UTAMA: DETEKSI HALAMAN, PENCARIAN, DAN JALANKAN FUNGSI ---
 document.addEventListener('DOMContentLoaded', () => {
-    // --- Logika Deteksi Halaman ---
+    // --- Variabel untuk elemen di berbagai halaman ---
     const carouselContainer = document.querySelector('.carousel');
     const playerContainer = document.getElementById('player-container');
     const sportsGridContainer = document.getElementById('sports-movies-grid');
-    const genreSelect = document.getElementById('genre-select'); // Elemen kunci untuk halaman Film
+    const genreSelect = document.getElementById('genre-select');
 
-    if (carouselContainer) { // Halaman Utama
+    // --- Logika Deteksi Halaman ---
+    if (carouselContainer) { // Halaman Utama (index.html)
         console.log("Halaman utama terdeteksi.");
-        const horrorListContainer = document.getElementById('horror-list');
-        const trendingTvListContainer = document.getElementById('trending-tv-list');
+        // Fungsi fetchAndBuildCarousel tetap spesifik karena strukturnya berbeda
+        const fetchAndBuildCarousel = async (container) => {
+            try {
+                const response = await fetch(apiEndpoints.trendingMovies);
+                const data = await response.json();
+                data.results.slice(0, 5).forEach(movie => {
+                    const slide = document.createElement('div');
+                    slide.className = 'slider';
+                    const imgElement = document.createElement('img');
+                    imgElement.src = `${imageBaseUrl}w1280${movie.backdrop_path}`;
+                    const content = document.createElement('div');
+                    content.className = 'slide-content';
+                    const h1 = document.createElement('h1');
+                    h1.className = 'movie-title';
+                    h1.textContent = movie.title;
+                    const p = document.createElement('p');
+                    p.className = 'movie-des';
+                    p.textContent = movie.overview;
+                    content.appendChild(h1);
+                    content.appendChild(p);
+                    slide.appendChild(content);
+                    slide.appendChild(imgElement);
+                    container.appendChild(slide);
+                });
+            } catch (error) {
+                console.error('Gagal memuat korsel:', error);
+            }
+        };
         fetchAndBuildCarousel(carouselContainer);
-        fetchAndBuildSection(apiEndpoints.horrorMovies, horrorListContainer);
-        fetchAndBuildSection(apiEndpoints.trendingTv, trendingTvListContainer);
+        fetchAndDisplayMedia(apiEndpoints.horrorMovies, document.getElementById('horror-list'));
+        fetchAndDisplayMedia(apiEndpoints.trendingTv, document.getElementById('trending-tv-list'));
     } 
-    else if (genreSelect) { // Halaman Film dengan Filter Genre
+    else if (genreSelect) { // Halaman Film dengan Filter Genre (film.html)
         console.log("Halaman Film dengan filter terdeteksi.");
-        const movieGrid = document.getElementById('upcoming-movies-grid');
+        const movieGrid = document.getElementById('movie-grid-container'); // Pastikan ID ini sesuai dengan HTML
         const pageTitle = document.getElementById('page-title');
 
-        // Fungsi untuk mengambil dan menampilkan film berdasarkan genre
-        const fetchMoviesByGenre = (genreId) => {
-            let endpoint = '';
-            if (genreId) {
-                // Endpoint untuk discover film berdasarkan genre
-                endpoint = `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&language=id-ID&sort_by=popularity.desc&with_genres=${genreId}`;
-            } else {
-                // Jika tidak ada genre dipilih, tampilkan film mendatang (default)
-                endpoint = apiEndpoints.upcomingMovies;
-            }
-            fetchAndBuildSection(endpoint, movieGrid);
-        };
-        
-        // Fungsi untuk mengisi dropdown genre
         const populateGenres = async () => {
             try {
                 const response = await fetch(apiEndpoints.movieGenres);
                 const data = await response.json();
-
-                // Opsi default
+                genreSelect.innerHTML = ''; // Bersihkan dulu
+                
                 const defaultOption = document.createElement('option');
                 defaultOption.value = '';
-                defaultOption.textContent = 'Semua Genre';
+                defaultOption.textContent = 'Semua (Film Mendatang)';
                 genreSelect.appendChild(defaultOption);
 
-                // Isi dengan genre dari API
                 data.genres.forEach(genre => {
                     const option = document.createElement('option');
                     option.value = genre.id;
                     option.textContent = genre.name;
                     genreSelect.appendChild(option);
                 });
-
             } catch (error) {
                 console.error("Gagal memuat genre:", error);
             }
         };
 
-        // Event listener untuk dropdown
         genreSelect.addEventListener('change', (e) => {
             const selectedGenreId = e.target.value;
             const selectedGenreName = e.target.options[e.target.selectedIndex].text;
             
-            // Perbarui judul halaman
+            let endpoint;
             if (selectedGenreId) {
                 pageTitle.textContent = `Film Genre: ${selectedGenreName}`;
+                endpoint = `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&language=id-ID&sort_by=popularity.desc&with_genres=${selectedGenreId}`;
             } else {
                 pageTitle.textContent = 'Film Mendatang';
+                endpoint = apiEndpoints.upcomingMovies;
             }
-
-            fetchMoviesByGenre(selectedGenreId);
+            fetchAndDisplayMedia(endpoint, movieGrid);
         });
 
-        // Panggil fungsi saat halaman dimuat pertama kali
+        // Panggil fungsi saat halaman dimuat
         populateGenres();
-        fetchMoviesByGenre(''); // Tampilkan film default (mendatang)
-
+        // Muat film default (mendatang) saat pertama kali halaman dibuka
+        fetchAndDisplayMedia(apiEndpoints.upcomingMovies, movieGrid);
     }
-    else if (sportsGridContainer) { // Halaman Olahraga
+    else if (sportsGridContainer) { // Halaman Olahraga (olahraga.html)
         console.log("Halaman Olahraga terdeteksi.");
-        fetchAndBuildSection(apiEndpoints.sportsMovies, sportsGridContainer);
+        fetchAndDisplayMedia(apiEndpoints.sportsMovies, sportsGridContainer);
     }
-    else if (playerContainer) { // Halaman Player
+    else if (playerContainer) { // Halaman Player (player.html)
         console.log("Halaman Player terdeteksi.");
         const params = new URLSearchParams(window.location.search);
         const mediaId = params.get('id');
@@ -208,6 +208,7 @@ document.addEventListener('DOMContentLoaded', () => {
             iframe.src = embedUrl;
             iframe.setAttribute('allowfullscreen', 'true');
             iframe.setAttribute('frameborder', '0');
+            playerContainer.innerHTML = ''; // Bersihkan kontainer sebelum menambahkan iframe
             playerContainer.appendChild(iframe);
         } else {
             titleElement.textContent = "Error: Film tidak dapat dimuat";
@@ -215,7 +216,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- LOGIKA PENCARIAN REAL-TIME (TETAP SAMA) ---
+    // --- LOGIKA PENCARIAN REAL-TIME ---
     const searchBox = document.querySelector('.search-box');
     const mainContainers = [
         document.querySelector('.carousel-container'),
@@ -244,36 +245,17 @@ document.addEventListener('DOMContentLoaded', () => {
         mainContainers.forEach(container => container.style.display = 'none');
         searchResultsWrapper.style.display = 'block';
 
-        try {
-            const response = await fetch(`${apiEndpoints.search}${encodeURIComponent(query)}`);
-            const data = await response.json();
-            
-            searchResultsWrapper.innerHTML = '';
-
-            const title = document.createElement('h1');
-            title.textContent = `Hasil Pencarian untuk "${query}"`;
-            searchResultsWrapper.appendChild(title);
-
-            const grid = document.createElement('div');
-            grid.className = 'movie-grid';
-
-            const validResults = data.results.filter(item => item.media_type !== 'person' && item.poster_path);
-
-            if (validResults.length > 0) {
-                validResults.forEach(item => {
-                    const card = createMediaCard(item);
-                    if (card) grid.appendChild(card);
-                });
-            } else {
-                grid.innerHTML = '<p>Tidak ada hasil yang ditemukan.</p>';
-            }
-            
-            searchResultsWrapper.appendChild(grid);
-
-        } catch (error) {
-            console.error('Gagal melakukan pencarian:', error);
-            searchResultsWrapper.innerHTML = '<h1>Error</h1><p>Gagal memuat hasil pencarian.</p>';
-        }
+        const searchGrid = document.createElement('div');
+        searchGrid.className = 'movie-grid';
+        
+        searchResultsWrapper.innerHTML = '';
+        const title = document.createElement('h1');
+        title.textContent = `Hasil Pencarian untuk "${query}"`;
+        searchResultsWrapper.appendChild(title);
+        searchResultsWrapper.appendChild(searchGrid);
+        
+        // Panggil fungsi generik untuk menampilkan hasil pencarian
+        fetchAndDisplayMedia(`${apiEndpoints.search}${encodeURIComponent(query)}`, searchGrid);
     };
 
     searchBox.addEventListener('input', (e) => {
@@ -283,4 +265,4 @@ document.addEventListener('DOMContentLoaded', () => {
             handleSearch(query);
         }, 500);
     });
-});```
+});
