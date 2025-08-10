@@ -15,17 +15,11 @@ const imageBaseUrl = 'https://image.tmdb.org/t/p/';
 
 
 // =========================================================================
-// BAGIAN FUNGSI-FUNGSI UTAMA (DEFINISI DI LUAR EVENT LISTENER)
+// BAGIAN FUNGSI-FUNGSI UTAMA
 // =========================================================================
 
-/**
- * Membuat sebuah elemen kartu untuk film atau serial TV.
- * @param {object} item - Objek data dari TMDB.
- * @returns {HTMLElement|null} - Elemen anchor (<a>) yang berisi kartu, atau null jika tidak valid.
- */
 const createMediaCard = (item) => {
     if (!item.poster_path) return null;
-
     const cardLink = document.createElement('a');
     cardLink.className = 'card';
     const mediaType = item.media_type || (item.title ? 'movie' : 'tv');
@@ -41,20 +35,13 @@ const createMediaCard = (item) => {
         </div>
     `;
     
-    // Mencegah link default dan hanya menampilkan alert
     cardLink.querySelector('.watchlist-btn').addEventListener('click', (e) => {
         e.preventDefault();
         alert(`Info untuk: ${item.title || item.name}`);
     });
-    
     return cardLink;
 };
 
-/**
- * Mengambil data dari endpoint dan menampilkannya dalam kontainer yang ditentukan.
- * @param {string} endpoint - URL API yang akan di-fetch.
- * @param {HTMLElement} container - Elemen DOM tempat hasil akan ditampilkan.
- */
 const fetchAndDisplayMedia = async (endpoint, container) => {
     if (!container) return;
     container.innerHTML = '<p style="text-align: center; width: 100%;">Memuat...</p>';
@@ -62,10 +49,8 @@ const fetchAndDisplayMedia = async (endpoint, container) => {
     try {
         const response = await fetch(endpoint);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        
         const data = await response.json();
         container.innerHTML = '';
-
         if (data.results && data.results.length > 0) {
             data.results.forEach(item => {
                 const card = createMediaCard(item);
@@ -80,17 +65,12 @@ const fetchAndDisplayMedia = async (endpoint, container) => {
     }
 };
 
-/**
- * Fungsi khusus untuk membuat dan menampilkan carousel di halaman utama.
- * @param {string} endpoint - URL API untuk trending movies.
- * @param {HTMLElement} container - Elemen DOM untuk carousel.
- */
 const fetchAndBuildCarousel = async (endpoint, container) => {
     if (!container) return;
     try {
         const response = await fetch(endpoint);
         const data = await response.json();
-        container.innerHTML = ''; // Bersihkan kontainer
+        container.innerHTML = '';
         data.results.slice(0, 5).forEach(movie => {
             const slide = document.createElement('div');
             slide.className = 'slider';
@@ -113,25 +93,20 @@ const fetchAndBuildCarousel = async (endpoint, container) => {
 // =========================================================================
 document.addEventListener('DOMContentLoaded', () => {
     
-    // --- Variabel untuk elemen di berbagai halaman ---
     const carouselContainer = document.querySelector('.carousel');
     const playerContainer = document.getElementById('player-container');
     const sportsGridContainer = document.getElementById('sports-movies-grid');
     const genreSelect = document.getElementById('genre-select');
 
-    // --- Logika Deteksi Halaman ---
-    if (carouselContainer) { // Halaman Utama (index.html)
-        console.log("Halaman utama terdeteksi.");
+    if (carouselContainer) { // Halaman Utama
         fetchAndBuildCarousel(apiEndpoints.trendingMovies, carouselContainer);
         fetchAndDisplayMedia(apiEndpoints.horrorMovies, document.getElementById('horror-list'));
         fetchAndDisplayMedia(apiEndpoints.trendingTv, document.getElementById('trending-tv-list'));
     } 
     
-    else if (genreSelect) { // Halaman Film (film.html)
-        console.log("Halaman Film terdeteksi.");
+    else if (genreSelect) { // Halaman Film
         const movieGrid = document.getElementById('movie-grid-container'); 
         const pageTitle = document.getElementById('page-title');
-
         const initializeFilmPage = async () => {
             try {
                 const response = await fetch(apiEndpoints.movieGenres);
@@ -143,76 +118,88 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (error) {
                 console.error("Gagal memuat daftar genre:", error);
             }
-            pageTitle.textContent = 'Film Populer';
+            if(pageTitle) pageTitle.textContent = 'Film Populer';
             await fetchAndDisplayMedia(apiEndpoints.popularMovies, movieGrid);
         };
-
         genreSelect.addEventListener('change', () => {
             const genreId = genreSelect.value;
             const genreName = genreSelect.options[genreSelect.selectedIndex].text;
             if (genreId) {
-                pageTitle.textContent = `Film Genre: ${genreName}`;
+                if(pageTitle) pageTitle.textContent = `Film Genre: ${genreName}`;
                 fetchAndDisplayMedia(`https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&with_genres=${genreId}&language=id-ID`, movieGrid);
             } else {
-                pageTitle.textContent = 'Film Populer';
+                if(pageTitle) pageTitle.textContent = 'Film Populer';
                 fetchAndDisplayMedia(apiEndpoints.popularMovies, movieGrid);
             }
         });
-
         initializeFilmPage();
     }
 
-    else if (sportsGridContainer) { // Halaman Olahraga (olahraga.html)
-        console.log("Halaman Olahraga terdeteksi.");
+    else if (sportsGridContainer) { // Halaman Olahraga
         fetchAndDisplayMedia(apiEndpoints.sportsMovies, sportsGridContainer);
     }
     
-    else if (playerContainer) { // Halaman Player (player.html)
+    // =========================================================================
+    // BAGIAN INI TELAH DIPERBAIKI (ERROR 131)
+    // =========================================================================
+    else if (playerContainer) { // Halaman Player
         console.log("Halaman Player terdeteksi.");
         const params = new URLSearchParams(window.location.search);
         const mediaId = params.get('id');
-        const mediaType = params.get('type');
         const mediaTitle = params.get('title');
         const titleElement = document.getElementById('movie-player-title');
+        
+        // Periksa apakah ID media ada di URL
         if (mediaId) {
-            titleElement.textContent = mediaTitle || "Memuat film...";
+            // Periksa apakah elemen judul ada sebelum mengubahnya
+            if (titleElement) {
+                titleElement.textContent = mediaTitle || "Memuat film...";
+            }
             document.title = `Nonton ${mediaTitle || 'Film'} - kingmovie-nobar gratis`;
+            
             const embedUrl = `https://vidfast.pro/movie/${mediaId}`;
             playerContainer.innerHTML = `<iframe src="${embedUrl}" allowfullscreen="true" frameborder="0"></iframe>`;
         } else {
-            titleElement.textContent = "Error: Film tidak dapat dimuat";
-            playerContainer.innerHTML = '<p>Parameter tidak lengkap.</p>';
+            // Tampilkan pesan error jika ID tidak ditemukan
+            if (titleElement) {
+                titleElement.textContent = "Error: Film tidak dapat dimuat";
+            }
+            playerContainer.innerHTML = '<p>Parameter ID film tidak ditemukan di URL.</p>';
         }
     }
 
     // --- LOGIKA PENCARIAN REAL-TIME ---
     const searchBox = document.querySelector('.search-box');
-    const mainContainers = Array.from(document.querySelectorAll('.carousel-container, .video-card-container, .main-content'));
-    let searchResultsWrapper = null;
-    let debounceTimeout;
+    // Tambahkan pemeriksaan apakah searchBox ada sebelum menambahkan event listener
+    if (searchBox) {
+        const mainContainers = Array.from(document.querySelectorAll('.carousel-container, .video-card-container, .main-content'));
+        let searchResultsWrapper = null;
+        let debounceTimeout;
 
-    const handleSearch = (query) => {
-        if (!searchResultsWrapper) {
-            searchResultsWrapper = document.createElement('div');
-            searchResultsWrapper.className = 'main-content';
-            document.querySelector('nav').insertAdjacentElement('afterend', searchResultsWrapper);
-        }
+        const handleSearch = (query) => {
+            if (!searchResultsWrapper) {
+                searchResultsWrapper = document.createElement('div');
+                searchResultsWrapper.className = 'main-content';
+                const nav = document.querySelector('nav');
+                if (nav) nav.insertAdjacentElement('afterend', searchResultsWrapper);
+            }
+            if (!query) {
+                mainContainers.forEach(container => container && (container.style.display = ''));
+                if (searchResultsWrapper) searchResultsWrapper.style.display = 'none';
+                return;
+            }
+            mainContainers.forEach(container => container && (container.style.display = 'none'));
+            if (searchResultsWrapper) {
+                searchResultsWrapper.style.display = 'block';
+                searchResultsWrapper.innerHTML = `<h1>Hasil Pencarian untuk "${query}"</h1><div class="movie-grid"></div>`;
+                const searchGrid = searchResultsWrapper.querySelector('.movie-grid');
+                fetchAndDisplayMedia(`${apiEndpoints.search}${encodeURIComponent(query)}`, searchGrid);
+            }
+        };
 
-        if (!query) {
-            mainContainers.forEach(container => container && (container.style.display = ''));
-            searchResultsWrapper.style.display = 'none';
-            return;
-        }
-
-        mainContainers.forEach(container => container && (container.style.display = 'none'));
-        searchResultsWrapper.style.display = 'block';
-        searchResultsWrapper.innerHTML = `<h1>Hasil Pencarian untuk "${query}"</h1><div class="movie-grid"></div>`;
-        const searchGrid = searchResultsWrapper.querySelector('.movie-grid');
-        fetchAndDisplayMedia(`${apiEndpoints.search}${encodeURIComponent(query)}`, searchGrid);
-    };
-
-    searchBox.addEventListener('input', (e) => {
-        clearTimeout(debounceTimeout);
-        debounceTimeout = setTimeout(() => handleSearch(e.target.value.trim()), 500);
-    });
+        searchBox.addEventListener('input', (e) => {
+            clearTimeout(debounceTimeout);
+            debounceTimeout = setTimeout(() => handleSearch(e.target.value.trim()), 500);
+        });
+    }
 });
