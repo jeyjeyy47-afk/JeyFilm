@@ -15,7 +15,6 @@ const imageBaseUrl = 'https://image.tmdb.org/t/p/';
 
 // --- Fungsi Generik untuk Membuat Kartu Media ---
 const createMediaCard = (item) => {
-    // Pastikan item memiliki poster_path, jika tidak, jangan buat kartunya
     if (!item.poster_path) return null;
 
     const cardLink = document.createElement('a');
@@ -63,31 +62,24 @@ const createMediaCard = (item) => {
 
 // --- Fungsi Generik untuk Mengambil dan Menampilkan Data di Grid atau List ---
 const fetchAndDisplayMedia = async (endpoint, container) => {
-    // Pastikan container ada sebelum melanjutkan
     if (!container) {
         console.error("Kesalahan: Kontainer untuk menampilkan media tidak ditemukan.");
         return;
     }
-
-    // Tampilkan pesan "Memuat..."
     container.innerHTML = '<p style="text-align: center; width: 100%;">Memuat...</p>';
     
     try {
         const response = await fetch(endpoint);
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         
-        // Bersihkan pesan "Memuat..."
+        const data = await response.json();
         container.innerHTML = '';
 
-        if (data.results && data.results.length > 0) {
-            data.results.forEach(item => {
+        const results = data.results || [];
+        if (results.length > 0) {
+            results.forEach(item => {
                 const card = createMediaCard(item);
-                if (card) { // Pastikan kartu berhasil dibuat
-                    container.appendChild(card);
-                }
+                if (card) container.appendChild(card);
             });
         } else {
             container.innerHTML = '<p style="text-align: center; width: 100%;">Tidak ada hasil yang ditemukan.</p>';
@@ -110,7 +102,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Logika Deteksi Halaman ---
     if (carouselContainer) { // Halaman Utama (index.html)
         console.log("Halaman utama terdeteksi.");
-        // Fungsi fetchAndBuildCarousel tetap spesifik karena strukturnya berbeda
         const fetchAndBuildCarousel = async (container) => {
             try {
                 const response = await fetch(apiEndpoints.trendingMovies);
@@ -142,53 +133,63 @@ document.addEventListener('DOMContentLoaded', () => {
         fetchAndDisplayMedia(apiEndpoints.horrorMovies, document.getElementById('horror-list'));
         fetchAndDisplayMedia(apiEndpoints.trendingTv, document.getElementById('trending-tv-list'));
     } 
-    else if (genreSelect) { // Halaman Film dengan Filter Genre (film.html)
-        console.log("Halaman Film dengan filter terdeteksi.");
-        const movieGrid = document.getElementById('movie-grid-container'); // Pastikan ID ini sesuai dengan HTML
+    
+    // =========================================================================
+    // BAGIAN INI TELAH DIPERBAIKI
+    // =========================================================================
+    else if (genreSelect) { // Logika untuk halaman Film (film.html)
+        console.log("Halaman Film terdeteksi, menginisialisasi filter genre.");
+
+        const movieGrid = document.getElementById('movie-grid-container');
         const pageTitle = document.getElementById('page-title');
 
-        const populateGenres = async () => {
+        // Fungsi untuk menginisialisasi halaman: mengisi genre dan memuat film default
+        const initializeFilmPage = async () => {
+            // 1. Mengisi dropdown genre
             try {
                 const response = await fetch(apiEndpoints.movieGenres);
                 const data = await response.json();
-                genreSelect.innerHTML = ''; // Bersihkan dulu
                 
-                const defaultOption = document.createElement('option');
-                defaultOption.value = '';
-                defaultOption.textContent = 'Semua (Film Mendatang)';
-                genreSelect.appendChild(defaultOption);
-
+                // Tambahkan opsi default "Semua Genre" terlebih dahulu
+                genreSelect.innerHTML = `<option value="">Semua (Film Mendatang)</option>`;
+                
+                // Tambahkan semua genre dari API
                 data.genres.forEach(genre => {
-                    const option = document.createElement('option');
-                    option.value = genre.id;
-                    option.textContent = genre.name;
-                    genreSelect.appendChild(option);
+                    genreSelect.innerHTML += `<option value="${genre.id}">${genre.name}</option>`;
                 });
             } catch (error) {
-                console.error("Gagal memuat genre:", error);
+                console.error("Gagal memuat daftar genre:", error);
+                genreSelect.innerHTML = `<option value="">Gagal memuat genre</option>`;
             }
+
+            // 2. Muat film default (upcoming) setelah genre selesai dimuat
+            await fetchAndDisplayMedia(apiEndpoints.upcomingMovies, movieGrid);
         };
 
-        genreSelect.addEventListener('change', (e) => {
-            const selectedGenreId = e.target.value;
-            const selectedGenreName = e.target.options[e.target.selectedIndex].text;
-            
-            let endpoint;
-            if (selectedGenreId) {
-                pageTitle.textContent = `Film Genre: ${selectedGenreName}`;
-                endpoint = `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&language=id-ID&sort_by=popularity.desc&with_genres=${selectedGenreId}`;
+        // Tambahkan event listener untuk merespons perubahan pada dropdown
+        genreSelect.addEventListener('change', () => {
+            const genreId = genreSelect.value;
+            const genreName = genreSelect.options[genreSelect.selectedIndex].text;
+
+            if (genreId) {
+                // Jika sebuah genre dipilih, ambil film berdasarkan genre tersebut
+                pageTitle.textContent = `Film Genre: ${genreName}`;
+                const genreEndpoint = `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&language=id-ID&sort_by=popularity.desc&with_genres=${genreId}`;
+                fetchAndDisplayMedia(genreEndpoint, movieGrid);
             } else {
+                // Jika "Semua Genre" dipilih, kembali ke daftar film mendatang
                 pageTitle.textContent = 'Film Mendatang';
-                endpoint = apiEndpoints.upcomingMovies;
+                fetchAndDisplayMedia(apiEndpoints.upcomingMovies, movieGrid);
             }
-            fetchAndDisplayMedia(endpoint, movieGrid);
         });
 
-        // Panggil fungsi saat halaman dimuat
-        populateGenres();
-        // Muat film default (mendatang) saat pertama kali halaman dibuka
-        fetchAndDisplayMedia(apiEndpoints.upcomingMovies, movieGrid);
+        // Jalankan fungsi inisialisasi saat halaman dimuat
+        initializeFilmPage();
     }
+    // =========================================================================
+    // AKHIR DARI BAGIAN YANG DIPERBAIKI
+    // =========================================================================
+
     else if (sportsGridContainer) { // Halaman Olahraga (olahraga.html)
         console.log("Halaman Olahraga terdeteksi.");
         fetchAndDisplayMedia(apiEndpoints.sportsMovies, sportsGridContainer);
@@ -208,7 +209,7 @@ document.addEventListener('DOMContentLoaded', () => {
             iframe.src = embedUrl;
             iframe.setAttribute('allowfullscreen', 'true');
             iframe.setAttribute('frameborder', '0');
-            playerContainer.innerHTML = ''; // Bersihkan kontainer sebelum menambahkan iframe
+            playerContainer.innerHTML = '';
             playerContainer.appendChild(iframe);
         } else {
             titleElement.textContent = "Error: Film tidak dapat dimuat";
@@ -254,7 +255,6 @@ document.addEventListener('DOMContentLoaded', () => {
         searchResultsWrapper.appendChild(title);
         searchResultsWrapper.appendChild(searchGrid);
         
-        // Panggil fungsi generik untuk menampilkan hasil pencarian
         fetchAndDisplayMedia(`${apiEndpoints.search}${encodeURIComponent(query)}`, searchGrid);
     };
 
