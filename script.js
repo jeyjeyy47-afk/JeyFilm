@@ -2,7 +2,8 @@
 const apiKey = 'bd7f7c2373a157c90b6d8585680b194c';
 
 const apiEndpoints = {
-    trendingMovies: `https://api.themoviedb.org/3/trending/movie/week?api_key=${apiKey}&language=id-ID`,
+    // REVISI: Mengganti trendingMovies dengan endpoint nowPlayingMovies untuk carousel
+    nowPlayingMovies: `https://api.themoviedb.org/3/movie/now_playing?api_key=${apiKey}&language=id-ID&page=1`,
     horrorMovies: `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&language=id-ID&with_genres=27&sort_by=popularity.desc`,
     trendingTv: `https://api.themoviedb.org/3/trending/tv/week?api_key=${apiKey}&language=id-ID`,
     popularMovies: `https://api.themoviedb.org/3/movie/popular?api_key=${apiKey}&language=id-ID&page=1`,
@@ -65,13 +66,18 @@ const fetchAndDisplayMedia = async (endpoint, container) => {
     }
 };
 
+// REVISI: Fungsi carousel sekarang juga akan memulai slider otomatis
 const fetchAndBuildCarousel = async (endpoint, container) => {
     if (!container) return;
     try {
         const response = await fetch(endpoint);
         const data = await response.json();
-        container.innerHTML = '';
-        data.results.slice(0, 5).forEach(movie => {
+        container.innerHTML = ''; // Bersihkan kontainer
+        
+        const movies = data.results.slice(0, 5); // Ambil 5 film pertama
+        if (movies.length === 0) return;
+
+        movies.forEach(movie => {
             const slide = document.createElement('div');
             slide.className = 'slider';
             slide.innerHTML = `
@@ -83,6 +89,18 @@ const fetchAndBuildCarousel = async (endpoint, container) => {
             `;
             container.appendChild(slide);
         });
+
+        // Memulai logika slider otomatis
+        let slideIndex = 0;
+        setInterval(() => {
+            slideIndex++;
+            if (slideIndex >= movies.length) {
+                slideIndex = 0; // Kembali ke slide pertama
+            }
+            // Menggeser kontainer carousel
+            container.style.transform = `translateX(-${slideIndex * 100}%)`;
+        }, 5000); // Durasi 5 detik
+
     } catch (error) {
         console.error('Gagal memuat korsel:', error);
     }
@@ -99,7 +117,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const genreSelect = document.getElementById('genre-select');
 
     if (carouselContainer) { // Halaman Utama
-        fetchAndBuildCarousel(apiEndpoints.trendingMovies, carouselContainer);
+        // REVISI: Memanggil carousel dengan endpoint film yang sedang tayang
+        fetchAndBuildCarousel(apiEndpoints.nowPlayingMovies, carouselContainer);
         fetchAndDisplayMedia(apiEndpoints.horrorMovies, document.getElementById('horror-list'));
         fetchAndDisplayMedia(apiEndpoints.trendingTv, document.getElementById('trending-tv-list'));
     } 
@@ -139,28 +158,19 @@ document.addEventListener('DOMContentLoaded', () => {
         fetchAndDisplayMedia(apiEndpoints.sportsMovies, sportsGridContainer);
     }
     
-    // =========================================================================
-    // BAGIAN INI TELAH DIPERBAIKI (ERROR 131)
-    // =========================================================================
     else if (playerContainer) { // Halaman Player
-        console.log("Halaman Player terdeteksi.");
         const params = new URLSearchParams(window.location.search);
         const mediaId = params.get('id');
         const mediaTitle = params.get('title');
         const titleElement = document.getElementById('movie-player-title');
-        
-        // Periksa apakah ID media ada di URL
         if (mediaId) {
-            // Periksa apakah elemen judul ada sebelum mengubahnya
             if (titleElement) {
                 titleElement.textContent = mediaTitle || "Memuat film...";
             }
             document.title = `Nonton ${mediaTitle || 'Film'} - kingmovie-nobar gratis`;
-            
             const embedUrl = `https://vidfast.pro/movie/${mediaId}`;
             playerContainer.innerHTML = `<iframe src="${embedUrl}" allowfullscreen="true" frameborder="0"></iframe>`;
         } else {
-            // Tampilkan pesan error jika ID tidak ditemukan
             if (titleElement) {
                 titleElement.textContent = "Error: Film tidak dapat dimuat";
             }
@@ -170,7 +180,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- LOGIKA PENCARIAN REAL-TIME ---
     const searchBox = document.querySelector('.search-box');
-    // Tambahkan pemeriksaan apakah searchBox ada sebelum menambahkan event listener
     if (searchBox) {
         const mainContainers = Array.from(document.querySelectorAll('.carousel-container, .video-card-container, .main-content'));
         let searchResultsWrapper = null;
