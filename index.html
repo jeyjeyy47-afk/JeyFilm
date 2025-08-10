@@ -3,20 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Klon Disney+</title>
+    <!-- MODIFIKASI DI SINI -->
+    <title>kingmovie-nobar gratis</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
     <!-- Navigasi Utama -->
     <nav class="navbar">
-        <!-- MODIFIKASI: Logo menjadi link ke halaman utama -->
         <a href="index.html">
             <img src="images/logo.png" class="brand-logo" alt="Logo">
         </a>
         <ul class="nav-links">
             <li class="nav-items"><a href="#">TV</a></li>
-            <!-- MODIFIKASI: Link Film mengarah ke halaman baru -->
             <li class="nav-items"><a href="film.html">Film</a></li>
             <li class="nav-items"><a href="#">Olahraga</a></li>
             <li class="nav-items"><a href="#">Anak-anak</a></li>
@@ -28,21 +27,27 @@
         </div>
     </nav>
 
-    <!-- Konten halaman utama lainnya tetap sama... -->
     <!-- Korsel Gambar Utama (Akan diisi oleh API) -->
     <div class="carousel-container">
-        <div class="carousel"></div>
+        <div class="carousel">
+            <!-- Konten korsel dibuat oleh JavaScript -->
+        </div>
     </div>
 
     <!-- Galeri Film Horor -->
     <div class="video-card-container">
         <h2 id="horror-title">Film Horor Populer</h2>
-        <div class="video-card-list" id="horror-list"></div>
+        <div class="video-card-list" id="horror-list">
+            <!-- Kartu film dibuat oleh JavaScript -->
+        </div>
     </div>
     
+    <!-- Galeri Serial TV -->
     <div class="video-card-container">
         <h2 id="trending-tv-title">Serial TV Sedang Tren</h2>
-        <div class="video-card-list" id="trending-tv-list"></div>
+        <div class="video-card-list" id="trending-tv-list">
+             <!-- Kartu film dibuat oleh JavaScript -->
+        </div>
     </div>
 
     <script src="script.js"></script>
