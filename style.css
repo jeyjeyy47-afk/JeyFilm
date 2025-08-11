@@ -115,7 +115,6 @@ body {
     background: #192133;
     overflow: hidden;
     margin-right: 0; 
-    /* REVISI: Menambahkan properti ini untuk menonaktifkan gaya link default */
     display: block;
     text-decoration: none;
     color: inherit;
@@ -299,7 +298,7 @@ body {
     border: none;
 }
 
-/* --- GAYA BARU UNTUK FILTER GENRE --- */
+/* Gaya untuk Filter Genre */
 .genre-filter {
     margin-bottom: 30px;
     display: flex;
@@ -327,115 +326,96 @@ body {
     border-color: #fff;
 }
 
+/* --- GAYA BARU UNTUK MODAL TRAILER --- */
+.trailer-modal {
+    display: none; /* Sembunyikan secara default */
+    position: fixed; /* Tetap di posisi yang sama bahkan saat scroll */
+    z-index: 100; /* Muncul di atas segalanya */
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto; /* Aktifkan scroll jika perlu */
+    background-color: rgba(0,0,0,0.8); /* Latar belakang hitam semi-transparan */
+    justify-content: center;
+    align-items: center;
+}
 
-/* --- Gaya Responsif untuk Mobile & Tablet --- */
+.trailer-modal.active {
+    display: flex; /* Gunakan flexbox untuk menengahkan */
+}
+
+.trailer-modal-content {
+    position: relative;
+    background-color: #000;
+    width: 80%;
+    max-width: 900px;
+    border: 2px solid #1f80e0;
+    border-radius: 10px;
+}
+
+.close-trailer-btn {
+    color: #fff;
+    position: absolute;
+    top: -40px;
+    right: 0;
+    font-size: 40px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: color 0.3s;
+}
+
+.close-trailer-btn:hover,
+.close-trailer-btn:focus {
+    color: #1f80e0;
+    text-decoration: none;
+}
+
+.trailer-video-container {
+    position: relative;
+    padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+    height: 0;
+    overflow: hidden;
+}
+
+.trailer-video-container iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+
+/* --- Gaya Responsif --- */
 @media (max-width: 768px) {
     .navbar {
         padding: 0 20px;
     }
-
-    .nav-links {
-        display: none;
-    }
-
-    .search-box {
-        width: 150px;
-    }
-
-    .carousel-container {
-        height: 250px;
-        padding: 10px 0;
-    }
-    
-    .slider {
-        margin-right: 0;
-    }
-
-    .slider img {
-        width: 100%;
-        object-position: center;
-    }
-
-    .slide-content {
-        width: 100%;
-        padding: 20px;
-        background: linear-gradient(to right, rgba(4, 7, 20, 0.8) 60%, transparent);
-    }
-
-    .movie-title {
-        font-size: 28px;
-    }
-
-    .movie-des {
-        font-size: 12px;
-        width: 90%;
-        margin-top: 10px;
-        line-height: 1.4;
-    }
-
-    .video-card-container,
-    .main-content {
-        padding: 20px;
-        width: auto;
-    }
-    
-    .video-card-container h2,
-    .main-content h1 {
-        font-size: 20px;
-    }
-
-    .video-card-list {
-        gap: 10px;
-    }
-
-    .movie-grid {
-        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-        gap: 15px;
-    }
-
-    .grid-item .card, .movie-grid .card {
-        height: 210px;
-    }
-    
-    .card {
-        min-width: 140px;
-        width: 140px;
-        height: 210px;
-    }
-    
-    .card:hover {
-        transform: scale(1.05); 
-    }
+    .nav-links { display: none; }
+    .search-box { width: 150px; }
+    .carousel-container { height: 250px; padding: 10px 0; }
+    .slider { margin-right: 0; }
+    .slider img { width: 100%; object-position: center; }
+    .slide-content { width: 100%; padding: 20px; background: linear-gradient(to right, rgba(4, 7, 20, 0.8) 60%, transparent); }
+    .movie-title { font-size: 28px; }
+    .movie-des { font-size: 12px; width: 90%; margin-top: 10px; line-height: 1.4; }
+    .video-card-container, .main-content { padding: 20px; width: auto; }
+    .video-card-container h2, .main-content h1 { font-size: 20px; }
+    .video-card-list { gap: 10px; }
+    .movie-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; }
+    .grid-item .card, .movie-grid .card { height: 210px; }
+    .card { min-width: 140px; width: 140px; height: 210px; }
+    .card:hover { transform: scale(1.05); }
+    .close-trailer-btn { top: -30px; font-size: 30px; }
 }
 
 @media (max-width: 480px) {
-    .navbar {
-        padding: 0 10px;
-    }
-    
-    .brand-logo {
-        height: 40px;
-    }
-
-    .search-box {
-        width: 120px;
-        font-size: 14px;
-        margin-right: 10px;
-    }
-    
-    .login-link {
-        font-size: 14px;
-    }
-
-    .movie-title {
-        font-size: 22px;
-    }
-    
-    .movie-des {
-        display: none;
-    }
-
-    .movie-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
+    .navbar { padding: 0 10px; }
+    .brand-logo { height: 40px; }
+    .search-box { width: 120px; font-size: 14px; margin-right: 10px; }
+    .login-link { font-size: 14px; }
+    .movie-title { font-size: 22px; }
+    .movie-des { display: none; }
+    .movie-grid { grid-template-columns: repeat(2, 1fr); }
 }
