@@ -6,7 +6,6 @@ const apiEndpoints = {
     horrorMovies: `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&language=id-ID&with_genres=27&sort_by=popularity.desc`,
     trendingTv: `https://api.themoviedb.org/3/trending/tv/week?api_key=${apiKey}&language=id-ID`,
     popularMovies: `https://api.themoviedb.org/3/movie/popular?api_key=${apiKey}&language=id-ID&page=1`,
-    // DIUBAH: sportsMovies menjadi fantasyMovies dengan genre ID 14
     fantasyMovies: `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&language=id-ID&with_genres=14&sort_by=popularity.desc`,
     search: `https://api.themoviedb.org/3/search/multi?api_key=${apiKey}&language=id-ID&query=`,
     movieGenres: `https://api.themoviedb.org/3/genre/movie/list?api_key=${apiKey}&language=id-ID`
@@ -26,19 +25,21 @@ const createMediaCard = (item) => {
     const mediaType = item.media_type || (item.title ? 'movie' : 'tv');
     if (mediaType === 'person') return null;
     
+    // Link utama tetap ke halaman player
     cardLink.href = `player.html?id=${item.id}&type=${mediaType}&title=${encodeURIComponent(item.title || item.name)}`;
     cardLink.innerHTML = `
         <img src="${imageBaseUrl}w500${item.poster_path}" class="card-img" alt="${item.title || item.name}">
         <div class="card-body">
             <h2 class="name">${item.title || item.name}</h2>
             <h6 class="des">${item.release_date ? `Rilis: ${item.release_date}` : `Rating: ${item.vote_average ? item.vote_average.toFixed(1) : 'N/A'}`}</h6>
-            <button class="watchlist-btn">Info Lebih Lanjut</button>
+            <button class="watchlist-btn">Tonton Trailer</button>
         </div>
     `;
     
+    // REVISI: Event listener tombol sekarang memanggil modal trailer
     cardLink.querySelector('.watchlist-btn').addEventListener('click', (e) => {
-        e.preventDefault();
-        alert(`Info untuk: ${item.title || item.name}`);
+        e.preventDefault(); // Mencegah link utama terbuka
+        openTrailerModal(item.id, mediaType);
     });
     return cardLink;
 };
@@ -102,14 +103,73 @@ const fetchAndBuildCarousel = async (endpoint, container) => {
     }
 };
 
+// FUNGSI BARU: Untuk membuka modal trailer
+const openTrailerModal = async (mediaId, mediaType) => {
+    const trailerModal = document.getElementById('trailerModal');
+    const trailerIframe = document.getElementById('trailerIframe');
+    if (!trailerModal || !trailerIframe) return;
+
+    try {
+        // Endpoint untuk video bisa berbeda antara movie dan tv
+        const videoEndpoint = `https://api.themoviedb.org/3/${mediaType}/${mediaId}/videos?api_key=${apiKey}`;
+        const response = await fetch(videoEndpoint);
+        const data = await response.json();
+
+        // Cari trailer resmi dari YouTube
+        const trailer = data.results.find(video => video.type === 'Trailer' && video.site === 'YouTube');
+
+        if (trailer && trailer.key) {
+            trailerIframe.src = `https://www.youtube.com/embed/${trailer.key}?autoplay=1`;
+            trailerModal.classList.add('active');
+        } else {
+            alert('Maaf, trailer tidak ditemukan untuk judul ini.');
+        }
+    } catch (error) {
+        console.error('Gagal memuat trailer:', error);
+        alert('Gagal memuat trailer.');
+    }
+};
+
+
 // =========================================================================
 // LOGIKA UTAMA: MENJALANKAN FUNGSI SETELAH HALAMAN SIAP
 // =========================================================================
 document.addEventListener('DOMContentLoaded', () => {
     
+    // --- MEMBUAT ELEMEN MODAL SECARA DINAMIS ---
+    const modalHTML = `
+        <div id="trailerModal" class="trailer-modal">
+            <div class="trailer-modal-content">
+                <span class="close-trailer-btn">&times;</span>
+                <div class="trailer-video-container">
+                    <iframe id="trailerIframe" src="" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    // --- Menambahkan Event Listener untuk Menutup Modal ---
+    const trailerModal = document.getElementById('trailerModal');
+    const closeBtn = document.querySelector('.close-trailer-btn');
+    const trailerIframe = document.getElementById('trailerIframe');
+
+    const closeModal = () => {
+        trailerModal.classList.remove('active');
+        trailerIframe.src = ''; // Hentikan video saat modal ditutup
+    };
+
+    closeBtn.addEventListener('click', closeModal);
+    // Tutup juga jika mengklik area gelap di luar modal
+    trailerModal.addEventListener('click', (event) => {
+        if (event.target === trailerModal) {
+            closeModal();
+        }
+    });
+    
+    // --- Logika Deteksi Halaman ---
     const carouselContainer = document.querySelector('.carousel');
     const playerContainer = document.getElementById('player-container');
-    // DIUBAH: Mencari kontainer fantasi
     const fantasyGridContainer = document.getElementById('fantasy-movies-grid');
     const genreSelect = document.getElementById('genre-select');
 
@@ -130,9 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 data.genres.forEach(genre => {
                     genreSelect.innerHTML += `<option value="${genre.id}">${genre.name}</option>`;
                 });
-            } catch (error) {
-                console.error("Gagal memuat daftar genre:", error);
-            }
+            } catch (error) { console.error("Gagal memuat daftar genre:", error); }
             if(pageTitle) pageTitle.textContent = 'Film Populer';
             await fetchAndDisplayMedia(apiEndpoints.popularMovies, movieGrid);
         };
@@ -150,9 +208,7 @@ document.addEventListener('DOMContentLoaded', () => {
         initializeFilmPage();
     }
 
-    // DIUBAH: Blok logika sekarang untuk halaman fantasi
     else if (fantasyGridContainer) { // Halaman Fantasi
-        console.log("Halaman Fantasi terdeteksi.");
         fetchAndDisplayMedia(apiEndpoints.fantasyMovies, fantasyGridContainer);
     }
     
@@ -162,16 +218,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const mediaTitle = params.get('title');
         const titleElement = document.getElementById('movie-player-title');
         if (mediaId) {
-            if (titleElement) {
-                titleElement.textContent = mediaTitle || "Memuat film...";
-            }
+            if (titleElement) titleElement.textContent = mediaTitle || "Memuat film...";
             document.title = `Nonton ${mediaTitle || 'Film'} - kingmovie-nobar gratis`;
             const embedUrl = `https://vidfast.pro/movie/${mediaId}`;
             playerContainer.innerHTML = `<iframe src="${embedUrl}" allowfullscreen="true" frameborder="0"></iframe>`;
         } else {
-            if (titleElement) {
-                titleElement.textContent = "Error: Film tidak dapat dimuat";
-            }
+            if (titleElement) titleElement.textContent = "Error: Film tidak dapat dimuat";
             playerContainer.innerHTML = '<p>Parameter ID film tidak ditemukan di URL.</p>';
         }
     }
@@ -182,7 +234,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const mainContainers = Array.from(document.querySelectorAll('.carousel-container, .video-card-container, .main-content'));
         let searchResultsWrapper = null;
         let debounceTimeout;
-
         const handleSearch = (query) => {
             if (!searchResultsWrapper) {
                 searchResultsWrapper = document.createElement('div');
@@ -203,7 +254,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 fetchAndDisplayMedia(`${apiEndpoints.search}${encodeURIComponent(query)}`, searchGrid);
             }
         };
-
         searchBox.addEventListener('input', (e) => {
             clearTimeout(debounceTimeout);
             debounceTimeout = setTimeout(() => handleSearch(e.target.value.trim()), 500);
