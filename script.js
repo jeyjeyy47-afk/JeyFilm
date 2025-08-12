@@ -12,7 +12,8 @@ const apiEndpoints = {
 };
 
 const imageBaseUrl = 'https://image.tmdb.org/t/p/';
-
+// GAMBAR PLACEHOLDER UNTUK AKTOR TANPA FOTO
+const placeholderPerson = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMjQgMjQiIGZpbGw9IiM0NzVlNzMiPjxwYXRoIGQ9Ik0xMiAyQzYuNDggMiAyIDYuNDggMiAxMnM0LjQ4IDEwIDEwIDEwIDEwLTQuNDggMTAtMTBTMTcuNTIgMiAxMiAyem0wIDNjMS42NiAwIDMgMS4zNCAzIDNzLTEuMzQgMy0zIDMtMy0xLjM0LTMtM1MxMC4zNCA1IDEyIDV6bTAgMTRjLTIuNjcgMC01LTEuMjgtNi41My0zLjA1QzYuOTUgMTQuNDEgOS4yMyAxNCAxMiAxNHMyLjA1LjQxIDMuNTMgMS45NWMtMS41MyAxLjc3LTMuODYgMy4wNS02LjUzIDMuMDV6Ii8+PC9zdmc+';
 
 // =========================================================================
 // BAGIAN FUNGSI-FUNGSI UTAMA
@@ -31,7 +32,7 @@ const createMediaCard = (item) => {
     cardImg.src = `${imageBaseUrl}w500${item.poster_path}`;
     cardImg.className = 'card-img';
     cardImg.alt = item.title || item.name;
-
+    
     cardLink.innerHTML = `
         <div class="card-body">
             <h2 class="name">${item.title || item.name}</h2>
@@ -39,9 +40,8 @@ const createMediaCard = (item) => {
             <button class="watchlist-btn">Tonton Trailer</button>
         </div>
     `;
-    cardLink.prepend(cardImg); // Tambahkan gambar di awal
+    cardLink.prepend(cardImg);
 
-    // REVISI: Klik pada gambar akan membuka modal detail
     cardImg.addEventListener('click', (e) => {
         e.preventDefault();
         openDetailsModal(item.id, mediaType);
@@ -55,10 +55,8 @@ const createMediaCard = (item) => {
 };
 
 const fetchAndDisplayMedia = async (endpoint, container) => {
-    // ... (Fungsi ini tidak berubah)
     if (!container) return;
     container.innerHTML = '<p style="text-align: center; width: 100%;">Memuat...</p>';
-    
     try {
         const response = await fetch(endpoint);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -79,7 +77,6 @@ const fetchAndDisplayMedia = async (endpoint, container) => {
 };
 
 const fetchAndBuildCarousel = async (endpoint, container) => {
-    // ... (Fungsi ini tidak berubah)
     if (!container) return;
     try {
         const response = await fetch(endpoint);
@@ -91,12 +88,7 @@ const fetchAndBuildCarousel = async (endpoint, container) => {
             const slide = document.createElement('a'); 
             slide.className = 'slider';
             slide.href = `player.html?id=${movie.id}&type=movie&title=${encodeURIComponent(movie.title)}`;
-            slide.innerHTML = `
-                <div class="slide-content">
-                    <h1 class="movie-title">${movie.title}</h1>
-                    <p class="movie-des">${movie.overview}</p>
-                </div>
-                <img src="${imageBaseUrl}w1280${movie.backdrop_path}" alt="${movie.title}">`;
+            slide.innerHTML = `<div class="slide-content"><h1 class="movie-title">${movie.title}</h1><p class="movie-des">${movie.overview}</p></div><img src="${imageBaseUrl}w1280${movie.backdrop_path}" alt="${movie.title}">`;
             container.appendChild(slide);
         });
         let slideIndex = 0;
@@ -109,19 +101,15 @@ const fetchAndBuildCarousel = async (endpoint, container) => {
     }
 };
 
-// --- FUNGSI-FUNGSI MODAL ---
 const openTrailerModal = async (mediaId, mediaType) => {
-    // ... (Fungsi ini tidak berubah)
     const trailerModal = document.getElementById('trailerModal');
     const trailerIframe = document.getElementById('trailerIframe');
     if (!trailerModal || !trailerIframe) return;
-
     try {
         const videoEndpoint = `https://api.themoviedb.org/3/${mediaType}/${mediaId}/videos?api_key=${apiKey}`;
         const response = await fetch(videoEndpoint);
         const data = await response.json();
         const trailer = data.results.find(video => video.type === 'Trailer' && video.site === 'YouTube');
-
         if (trailer && trailer.key) {
             trailerIframe.src = `https://www.youtube.com/embed/${trailer.key}?autoplay=1`;
             trailerModal.classList.add('active');
@@ -134,42 +122,37 @@ const openTrailerModal = async (mediaId, mediaType) => {
     }
 };
 
-// FUNGSI BARU: Untuk membuka dan mengisi modal detail
 const openDetailsModal = async (mediaId, mediaType) => {
     const detailsModal = document.getElementById('detailsModal');
-    const detailsContent = document.querySelector('.details-modal-content');
+    const detailsContent = document.getElementById('detailsModalContent');
     if (!detailsModal || !detailsContent) return;
 
     detailsContent.innerHTML = '<p style="text-align:center; padding: 50px;">Memuat detail...</p>';
     detailsModal.classList.add('active');
 
     try {
-        // Buat dua URL API untuk detail dan kredit (pemain)
         const detailsUrl = `https://api.themoviedb.org/3/${mediaType}/${mediaId}?api_key=${apiKey}&language=id-ID`;
         const creditsUrl = `https://api.themoviedb.org/3/${mediaType}/${mediaId}/credits?api_key=${apiKey}&language=id-ID`;
-
-        // Ambil kedua data secara bersamaan
+        
         const [detailsRes, creditsRes] = await Promise.all([fetch(detailsUrl), fetch(creditsUrl)]);
         if (!detailsRes.ok || !creditsRes.ok) throw new Error('Gagal mengambil data detail.');
         
         const details = await detailsRes.json();
         const credits = await creditsRes.json();
-        
-        // Buat daftar genre
-        const genresHtml = details.genres.map(genre => `<li>${genre.name}</li>`).join('');
 
-        // Buat daftar pemain (maksimal 10)
-        const castHtml = credits.cast.slice(0, 10).map(member => `
+        const genres = Array.isArray(details.genres) ? details.genres : [];
+        const cast = Array.isArray(credits.cast) ? credits.cast : [];
+        
+        const genresHtml = genres.map(genre => `<li>${genre.name}</li>`).join('');
+        const castHtml = cast.slice(0, 10).map(member => `
             <div class="cast-member">
-                <img src="${member.profile_path ? imageBaseUrl + 'w185' + member.profile_path : 'placeholder.jpg'}" class="cast-photo" alt="${member.name}">
+                <img src="${member.profile_path ? imageBaseUrl + 'w185' + member.profile_path : placeholderPerson}" class="cast-photo" alt="${member.name}">
                 <div class="cast-name">${member.name}</div>
                 <div class="cast-character">${member.character}</div>
-            </div>
-        `).join('');
+            </div>`).join('');
 
-        // Isi konten modal dengan semua data yang sudah didapat
         detailsContent.innerHTML = `
-            <span class="modal-close-btn" id="closeDetailsBtn">&times;</span>
+            <span class="modal-close-btn">&times;</span>
             <div class="details-header">
                 <div class="details-poster">
                     <img src="${imageBaseUrl}w500${details.poster_path}" alt="${details.title || details.name}">
@@ -177,35 +160,27 @@ const openDetailsModal = async (mediaId, mediaType) => {
                 <div class="details-info">
                     <h1>${details.title || details.name}</h1>
                     <ul class="genres-list">${genresHtml}</ul>
-                    <div class="rating">⭐ ${details.vote_average.toFixed(1)} / 10</div>
+                    <div class="rating">⭐ ${details.vote_average ? details.vote_average.toFixed(1) : 'N/A'} / 10</div>
                     <p class="synopsis">${details.overview || 'Sinopsis tidak tersedia.'}</p>
                 </div>
             </div>
             <div class="cast-section">
                 <h3>Pemeran Utama</h3>
-                <div class="cast-list">${castHtml}</div>
+                <div class="cast-list">${castHtml.length > 0 ? castHtml : '<p>Informasi pemeran tidak tersedia.</p>'}</div>
             </div>
         `;
-        
-        // Tambahkan event listener untuk tombol tutup yang baru dibuat
-        document.getElementById('closeDetailsBtn').addEventListener('click', () => {
-            detailsModal.classList.remove('active');
-        });
-
     } catch (error) {
         console.error('Gagal membuka detail modal:', error);
-        detailsContent.innerHTML = '<p style="text-align:center; padding: 50px;">Gagal memuat detail. Silakan coba lagi.</p>';
+        detailsContent.innerHTML = '<p style="text-align:center; padding: 50px;">Gagal memuat detail. Silakan coba lagi.</p><span class="modal-close-btn">&times;</span>';
     }
 };
-
 
 // =========================================================================
 // LOGIKA UTAMA: MENJALANKAN FUNGSI SETELAH HALAMAN SIAP
 // =========================================================================
 document.addEventListener('DOMContentLoaded', () => {
     
-    // --- MEMBUAT ELEMEN-ELEMEN MODAL SECARA DINAMIS ---
-    const trailerModalHTML = `
+    document.body.insertAdjacentHTML('beforeend', `
         <div id="trailerModal" class="modal-backdrop">
             <div class="trailer-modal-content">
                 <span class="modal-close-btn">&times;</span>
@@ -213,43 +188,43 @@ document.addEventListener('DOMContentLoaded', () => {
                     <iframe id="trailerIframe" src="" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
                 </div>
             </div>
-        </div>`;
-    const detailsModalHTML = `
+        </div>
         <div id="detailsModal" class="modal-backdrop">
-            <div class="details-modal-content">
-                <!-- Konten akan diisi oleh JavaScript -->
-            </div>
-        </div>`;
-    document.body.insertAdjacentHTML('beforeend', trailerModalHTML);
-    document.body.insertAdjacentHTML('beforeend', detailsModalHTML);
+            <div id="detailsModalContent" class="details-modal-content"></div>
+        </div>
+    `);
 
-    // --- Menambahkan Event Listener untuk Menutup Modal ---
     const trailerModal = document.getElementById('trailerModal');
     const detailsModal = document.getElementById('detailsModal');
     
     const closeModal = (modal) => {
+        if (!modal) return;
         modal.classList.remove('active');
         const iframe = modal.querySelector('iframe');
-        if (iframe) iframe.src = ''; // Hentikan video jika ada
+        if (iframe) iframe.src = '';
     };
 
-    trailerModal.querySelector('.modal-close-btn').addEventListener('click', () => closeModal(trailerModal));
-    trailerModal.addEventListener('click', (e) => { if (e.target === trailerModal) closeModal(trailerModal); });
-    detailsModal.addEventListener('click', (e) => { if (e.target === detailsModal) closeModal(detailsModal); });
+    document.body.addEventListener('click', (e) => {
+        if (e.target.matches('.modal-close-btn')) {
+            closeModal(e.target.closest('.modal-backdrop'));
+        }
+        if (e.target.matches('.modal-backdrop')) {
+            closeModal(e.target);
+        }
+    });
 
-    // --- Logika Deteksi Halaman ---
     const carouselContainer = document.querySelector('.carousel');
     const playerContainer = document.getElementById('player-container');
     const fantasyGridContainer = document.getElementById('fantasy-movies-grid');
     const genreSelect = document.getElementById('genre-select');
 
-    if (carouselContainer) { // Halaman Utama
+    if (carouselContainer) {
         fetchAndBuildCarousel(apiEndpoints.nowPlayingMovies, carouselContainer);
         fetchAndDisplayMedia(apiEndpoints.horrorMovies, document.getElementById('horror-list'));
         fetchAndDisplayMedia(apiEndpoints.trendingTv, document.getElementById('trending-tv-list'));
     } 
     
-    else if (genreSelect) { // Halaman Film
+    else if (genreSelect) {
         const movieGrid = document.getElementById('movie-grid-container'); 
         const pageTitle = document.getElementById('page-title');
         const initializeFilmPage = async () => {
@@ -257,9 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const response = await fetch(apiEndpoints.movieGenres);
                 const data = await response.json();
                 genreSelect.innerHTML = `<option value="">Semua (Populer)</option>`;
-                data.genres.forEach(genre => {
-                    genreSelect.innerHTML += `<option value="${genre.id}">${genre.name}</option>`;
-                });
+                data.genres.forEach(genre => genreSelect.innerHTML += `<option value="${genre.id}">${genre.name}</option>`);
             } catch (error) { console.error("Gagal memuat daftar genre:", error); }
             if(pageTitle) pageTitle.textContent = 'Film Populer';
             await fetchAndDisplayMedia(apiEndpoints.popularMovies, movieGrid);
@@ -278,11 +251,11 @@ document.addEventListener('DOMContentLoaded', () => {
         initializeFilmPage();
     }
 
-    else if (fantasyGridContainer) { // Halaman Fantasi
+    else if (fantasyGridContainer) {
         fetchAndDisplayMedia(apiEndpoints.fantasyMovies, fantasyGridContainer);
     }
     
-    else if (playerContainer) { // Halaman Player
+    else if (playerContainer) {
         const params = new URLSearchParams(window.location.search);
         const mediaId = params.get('id');
         const mediaTitle = params.get('title');
@@ -298,7 +271,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- LOGIKA PENCARIAN REAL-TIME ---
     const searchBox = document.querySelector('.search-box');
     if (searchBox) {
         const mainContainers = Array.from(document.querySelectorAll('.carousel-container, .video-card-container, .main-content'));
