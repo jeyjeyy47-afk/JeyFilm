@@ -25,26 +25,37 @@ const createMediaCard = (item) => {
     const mediaType = item.media_type || (item.title ? 'movie' : 'tv');
     if (mediaType === 'person') return null;
     
-    // Link utama tetap ke halaman player
     cardLink.href = `player.html?id=${item.id}&type=${mediaType}&title=${encodeURIComponent(item.title || item.name)}`;
+    
+    const cardImg = document.createElement('img');
+    cardImg.src = `${imageBaseUrl}w500${item.poster_path}`;
+    cardImg.className = 'card-img';
+    cardImg.alt = item.title || item.name;
+
     cardLink.innerHTML = `
-        <img src="${imageBaseUrl}w500${item.poster_path}" class="card-img" alt="${item.title || item.name}">
         <div class="card-body">
             <h2 class="name">${item.title || item.name}</h2>
             <h6 class="des">${item.release_date ? `Rilis: ${item.release_date}` : `Rating: ${item.vote_average ? item.vote_average.toFixed(1) : 'N/A'}`}</h6>
             <button class="watchlist-btn">Tonton Trailer</button>
         </div>
     `;
-    
-    // REVISI: Event listener tombol sekarang memanggil modal trailer
+    cardLink.prepend(cardImg); // Tambahkan gambar di awal
+
+    // REVISI: Klik pada gambar akan membuka modal detail
+    cardImg.addEventListener('click', (e) => {
+        e.preventDefault();
+        openDetailsModal(item.id, mediaType);
+    });
+
     cardLink.querySelector('.watchlist-btn').addEventListener('click', (e) => {
-        e.preventDefault(); // Mencegah link utama terbuka
+        e.preventDefault();
         openTrailerModal(item.id, mediaType);
     });
     return cardLink;
 };
 
 const fetchAndDisplayMedia = async (endpoint, container) => {
+    // ... (Fungsi ini tidak berubah)
     if (!container) return;
     container.innerHTML = '<p style="text-align: center; width: 100%;">Memuat...</p>';
     
@@ -68,54 +79,47 @@ const fetchAndDisplayMedia = async (endpoint, container) => {
 };
 
 const fetchAndBuildCarousel = async (endpoint, container) => {
+    // ... (Fungsi ini tidak berubah)
     if (!container) return;
     try {
         const response = await fetch(endpoint);
         const data = await response.json();
         container.innerHTML = ''; 
-        
         const movies = data.results.slice(0, 5);
         if (movies.length === 0) return;
-
         movies.forEach(movie => {
             const slide = document.createElement('a'); 
             slide.className = 'slider';
             slide.href = `player.html?id=${movie.id}&type=movie&title=${encodeURIComponent(movie.title)}`;
-
             slide.innerHTML = `
                 <div class="slide-content">
                     <h1 class="movie-title">${movie.title}</h1>
                     <p class="movie-des">${movie.overview}</p>
                 </div>
-                <img src="${imageBaseUrl}w1280${movie.backdrop_path}" alt="${movie.title}">
-            `;
+                <img src="${imageBaseUrl}w1280${movie.backdrop_path}" alt="${movie.title}">`;
             container.appendChild(slide);
         });
-
         let slideIndex = 0;
         setInterval(() => {
             slideIndex = (slideIndex + 1) % movies.length;
             container.style.transform = `translateX(-${slideIndex * 100}%)`;
         }, 5000);
-
     } catch (error) {
         console.error('Gagal memuat korsel:', error);
     }
 };
 
-// FUNGSI BARU: Untuk membuka modal trailer
+// --- FUNGSI-FUNGSI MODAL ---
 const openTrailerModal = async (mediaId, mediaType) => {
+    // ... (Fungsi ini tidak berubah)
     const trailerModal = document.getElementById('trailerModal');
     const trailerIframe = document.getElementById('trailerIframe');
     if (!trailerModal || !trailerIframe) return;
 
     try {
-        // Endpoint untuk video bisa berbeda antara movie dan tv
         const videoEndpoint = `https://api.themoviedb.org/3/${mediaType}/${mediaId}/videos?api_key=${apiKey}`;
         const response = await fetch(videoEndpoint);
         const data = await response.json();
-
-        // Cari trailer resmi dari YouTube
         const trailer = data.results.find(video => video.type === 'Trailer' && video.site === 'YouTube');
 
         if (trailer && trailer.key) {
@@ -130,43 +134,109 @@ const openTrailerModal = async (mediaId, mediaType) => {
     }
 };
 
+// FUNGSI BARU: Untuk membuka dan mengisi modal detail
+const openDetailsModal = async (mediaId, mediaType) => {
+    const detailsModal = document.getElementById('detailsModal');
+    const detailsContent = document.querySelector('.details-modal-content');
+    if (!detailsModal || !detailsContent) return;
+
+    detailsContent.innerHTML = '<p style="text-align:center; padding: 50px;">Memuat detail...</p>';
+    detailsModal.classList.add('active');
+
+    try {
+        // Buat dua URL API untuk detail dan kredit (pemain)
+        const detailsUrl = `https://api.themoviedb.org/3/${mediaType}/${mediaId}?api_key=${apiKey}&language=id-ID`;
+        const creditsUrl = `https://api.themoviedb.org/3/${mediaType}/${mediaId}/credits?api_key=${apiKey}&language=id-ID`;
+
+        // Ambil kedua data secara bersamaan
+        const [detailsRes, creditsRes] = await Promise.all([fetch(detailsUrl), fetch(creditsUrl)]);
+        if (!detailsRes.ok || !creditsRes.ok) throw new Error('Gagal mengambil data detail.');
+        
+        const details = await detailsRes.json();
+        const credits = await creditsRes.json();
+        
+        // Buat daftar genre
+        const genresHtml = details.genres.map(genre => `<li>${genre.name}</li>`).join('');
+
+        // Buat daftar pemain (maksimal 10)
+        const castHtml = credits.cast.slice(0, 10).map(member => `
+            <div class="cast-member">
+                <img src="${member.profile_path ? imageBaseUrl + 'w185' + member.profile_path : 'placeholder.jpg'}" class="cast-photo" alt="${member.name}">
+                <div class="cast-name">${member.name}</div>
+                <div class="cast-character">${member.character}</div>
+            </div>
+        `).join('');
+
+        // Isi konten modal dengan semua data yang sudah didapat
+        detailsContent.innerHTML = `
+            <span class="modal-close-btn" id="closeDetailsBtn">&times;</span>
+            <div class="details-header">
+                <div class="details-poster">
+                    <img src="${imageBaseUrl}w500${details.poster_path}" alt="${details.title || details.name}">
+                </div>
+                <div class="details-info">
+                    <h1>${details.title || details.name}</h1>
+                    <ul class="genres-list">${genresHtml}</ul>
+                    <div class="rating">⭐ ${details.vote_average.toFixed(1)} / 10</div>
+                    <p class="synopsis">${details.overview || 'Sinopsis tidak tersedia.'}</p>
+                </div>
+            </div>
+            <div class="cast-section">
+                <h3>Pemeran Utama</h3>
+                <div class="cast-list">${castHtml}</div>
+            </div>
+        `;
+        
+        // Tambahkan event listener untuk tombol tutup yang baru dibuat
+        document.getElementById('closeDetailsBtn').addEventListener('click', () => {
+            detailsModal.classList.remove('active');
+        });
+
+    } catch (error) {
+        console.error('Gagal membuka detail modal:', error);
+        detailsContent.innerHTML = '<p style="text-align:center; padding: 50px;">Gagal memuat detail. Silakan coba lagi.</p>';
+    }
+};
+
 
 // =========================================================================
 // LOGIKA UTAMA: MENJALANKAN FUNGSI SETELAH HALAMAN SIAP
 // =========================================================================
 document.addEventListener('DOMContentLoaded', () => {
     
-    // --- MEMBUAT ELEMEN MODAL SECARA DINAMIS ---
-    const modalHTML = `
-        <div id="trailerModal" class="trailer-modal">
+    // --- MEMBUAT ELEMEN-ELEMEN MODAL SECARA DINAMIS ---
+    const trailerModalHTML = `
+        <div id="trailerModal" class="modal-backdrop">
             <div class="trailer-modal-content">
-                <span class="close-trailer-btn">&times;</span>
+                <span class="modal-close-btn">&times;</span>
                 <div class="trailer-video-container">
                     <iframe id="trailerIframe" src="" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
                 </div>
             </div>
-        </div>
-    `;
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
+        </div>`;
+    const detailsModalHTML = `
+        <div id="detailsModal" class="modal-backdrop">
+            <div class="details-modal-content">
+                <!-- Konten akan diisi oleh JavaScript -->
+            </div>
+        </div>`;
+    document.body.insertAdjacentHTML('beforeend', trailerModalHTML);
+    document.body.insertAdjacentHTML('beforeend', detailsModalHTML);
 
     // --- Menambahkan Event Listener untuk Menutup Modal ---
     const trailerModal = document.getElementById('trailerModal');
-    const closeBtn = document.querySelector('.close-trailer-btn');
-    const trailerIframe = document.getElementById('trailerIframe');
-
-    const closeModal = () => {
-        trailerModal.classList.remove('active');
-        trailerIframe.src = ''; // Hentikan video saat modal ditutup
+    const detailsModal = document.getElementById('detailsModal');
+    
+    const closeModal = (modal) => {
+        modal.classList.remove('active');
+        const iframe = modal.querySelector('iframe');
+        if (iframe) iframe.src = ''; // Hentikan video jika ada
     };
 
-    closeBtn.addEventListener('click', closeModal);
-    // Tutup juga jika mengklik area gelap di luar modal
-    trailerModal.addEventListener('click', (event) => {
-        if (event.target === trailerModal) {
-            closeModal();
-        }
-    });
-    
+    trailerModal.querySelector('.modal-close-btn').addEventListener('click', () => closeModal(trailerModal));
+    trailerModal.addEventListener('click', (e) => { if (e.target === trailerModal) closeModal(trailerModal); });
+    detailsModal.addEventListener('click', (e) => { if (e.target === detailsModal) closeModal(detailsModal); });
+
     // --- Logika Deteksi Halaman ---
     const carouselContainer = document.querySelector('.carousel');
     const playerContainer = document.getElementById('player-container');
