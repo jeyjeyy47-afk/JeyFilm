@@ -12,7 +12,6 @@ const apiEndpoints = {
 };
 
 const imageBaseUrl = 'https://image.tmdb.org/t/p/';
-// GAMBAR PLACEHOLDER UNTUK AKTOR TANPA FOTO
 const placeholderPerson = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMjQgMjQiIGZpbGw9IiM0NzVlNzMiPjxwYXRoIGQ9Ik0xMiAyQzYuNDggMiAyIDYuNDggMiAxMnM0LjQ4IDEwIDEwIDEwIDEwLTQuNDggMTAtMTBTMTcuNTIgMiAxMiAyem0wIDNjMS42NiAwIDMgMS4zNCAzIDNzLTEuMzQgMy0zIDMtMy0xLjM0LTMtM1MxMC4zNCA1IDEyIDV6bTAgMTRjLTIuNjcgMC01LTEuMjgtNi41My0zLjA1QzYuOTUgMTQuNDEgOS4yMyAxNCAxMiAxNHMyLjA1LjQxIDMuNTMgMS45NWMtMS41MyAxLjc3LTMuODYgMy4wNS02LjUzIDMuMDV6Ii8+PC9zdmc+';
 
 // =========================================================================
@@ -32,15 +31,17 @@ const createMediaCard = (item) => {
     cardImg.src = `${imageBaseUrl}w500${item.poster_path}`;
     cardImg.className = 'card-img';
     cardImg.alt = item.title || item.name;
-    
-    cardLink.innerHTML = `
-        <div class="card-body">
-            <h2 class="name">${item.title || item.name}</h2>
-            <h6 class="des">${item.release_date ? `Rilis: ${item.release_date}` : `Rating: ${item.vote_average ? item.vote_average.toFixed(1) : 'N/A'}`}</h6>
-            <button class="watchlist-btn">Tonton Trailer</button>
-        </div>
+
+    const cardBody = document.createElement('div');
+    cardBody.className = 'card-body';
+    cardBody.innerHTML = `
+        <h2 class="name">${item.title || item.name}</h2>
+        <h6 class="des">${item.release_date ? `Rilis: ${item.release_date}` : `Rating: ${item.vote_average ? item.vote_average.toFixed(1) : 'N/A'}`}</h6>
+        <button class="watchlist-btn">Tonton Trailer</button>
     `;
-    cardLink.prepend(cardImg);
+
+    cardLink.appendChild(cardImg);
+    cardLink.appendChild(cardBody);
 
     cardImg.addEventListener('click', (e) => {
         e.preventDefault();
@@ -123,9 +124,14 @@ const openTrailerModal = async (mediaId, mediaType) => {
 };
 
 const openDetailsModal = async (mediaId, mediaType) => {
+    console.log(`Membuka detail untuk ID: ${mediaId}, Tipe: ${mediaType}`);
     const detailsModal = document.getElementById('detailsModal');
     const detailsContent = document.getElementById('detailsModalContent');
-    if (!detailsModal || !detailsContent) return;
+    
+    if (!detailsModal || !detailsContent) {
+        console.error("Elemen modal detail atau konten tidak ditemukan!");
+        return;
+    }
 
     detailsContent.innerHTML = '<p style="text-align:center; padding: 50px;">Memuat detail...</p>';
     detailsModal.classList.add('active');
@@ -135,10 +141,12 @@ const openDetailsModal = async (mediaId, mediaType) => {
         const creditsUrl = `https://api.themoviedb.org/3/${mediaType}/${mediaId}/credits?api_key=${apiKey}&language=id-ID`;
         
         const [detailsRes, creditsRes] = await Promise.all([fetch(detailsUrl), fetch(creditsUrl)]);
-        if (!detailsRes.ok || !creditsRes.ok) throw new Error('Gagal mengambil data detail.');
+        if (!detailsRes.ok || !creditsRes.ok) throw new Error('Gagal mengambil data detail atau kredit.');
         
         const details = await detailsRes.json();
         const credits = await creditsRes.json();
+        console.log("Data Detail Diterima:", details);
+        console.log("Data Kredit Diterima:", credits);
 
         const genres = Array.isArray(details.genres) ? details.genres : [];
         const cast = Array.isArray(credits.cast) ? credits.cast : [];
@@ -171,7 +179,9 @@ const openDetailsModal = async (mediaId, mediaType) => {
         `;
     } catch (error) {
         console.error('Gagal membuka detail modal:', error);
-        detailsContent.innerHTML = '<p style="text-align:center; padding: 50px;">Gagal memuat detail. Silakan coba lagi.</p><span class="modal-close-btn">&times;</span>';
+        detailsContent.innerHTML = `
+            <span class="modal-close-btn">&times;</span>
+            <p style="text-align:center; padding: 50px;">Gagal memuat detail. Silakan coba lagi.</p>`;
     }
 };
 
@@ -180,6 +190,7 @@ const openDetailsModal = async (mediaId, mediaType) => {
 // =========================================================================
 document.addEventListener('DOMContentLoaded', () => {
     
+    // REVISI KRUSIAL: Menambahkan id="detailsModalContent" pada div yang benar
     document.body.insertAdjacentHTML('beforeend', `
         <div id="trailerModal" class="modal-backdrop">
             <div class="trailer-modal-content">
@@ -190,7 +201,9 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         </div>
         <div id="detailsModal" class="modal-backdrop">
-            <div id="detailsModalContent" class="details-modal-content"></div>
+            <div id="detailsModalContent" class="details-modal-content">
+                <!-- Konten akan diisi oleh JavaScript -->
+            </div>
         </div>
     `);
 
@@ -213,6 +226,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // ... sisa kode tidak berubah ...
     const carouselContainer = document.querySelector('.carousel');
     const playerContainer = document.getElementById('player-container');
     const fantasyGridContainer = document.getElementById('fantasy-movies-grid');
